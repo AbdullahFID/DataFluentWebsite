@@ -8,14 +8,14 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   return (
-    <main className="min-h-screen bg-[#050508]">
-      {/* Landing page renders underneath */}
+    <>
+      {/* Landing page underneath */}
       <LandingPage visible={!isLoading} />
       
-      {/* Loader on top - disappears when complete */}
+      {/* Loader on top */}
       {isLoading && (
         <LoadingAnimation onComplete={() => setIsLoading(false)} />
       )}
-    </main>
+    </>
   );
 }
