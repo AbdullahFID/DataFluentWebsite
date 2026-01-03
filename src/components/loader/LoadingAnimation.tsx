@@ -25,10 +25,11 @@ const TIMINGS = {
   settleDelay: 780,
   settleDuration: 1400,
 
-  // When header rotates from "TALENT FROM" to "Now working for you"
-  headerRotateDelay: 600, // ms after gradient complete
+  headerRotateDelay: 600,
 
-  cycle: 16000,
+  // Exit animation timing
+  exitDelay: 1800, // ms after header rotates to "Now working for you"
+  exitDuration: 800, // zoom-through animation duration
 } as const;
 
 function vibrate(pattern: number | number[]) {
@@ -39,7 +40,12 @@ function vibrate(pattern: number | number[]) {
 
 type CompanyPhase = 'hidden' | 'zooming' | 'visible' | 'exploding';
 
-export function LoadingAnimation() {
+interface LoadingAnimationProps {
+  /** Called when the entire animation completes and exit is done */
+  onComplete?: () => void;
+}
+
+export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
   const prefersReducedMotion = useReducedMotion();
 
   const [headerVisible, setHeaderVisible] = useState(false);
@@ -54,10 +60,12 @@ export function LoadingAnimation() {
 
   const [gradientProgress, setGradientProgress] = useState(0);
 
-  // 0 = "TALENT FROM", 1 = "Now working for you"
   const [headerPhase, setHeaderPhase] = useState(0);
-  // Trigger decrypt animation on the second header
   const [triggerDecrypt, setTriggerDecrypt] = useState(false);
+
+  // Exit animation state
+  const [isExiting, setIsExiting] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
 
   const logoRef = useRef<HTMLDivElement>(null);
   const particleRef = useRef<ParticleCanvasHandle>(null);
@@ -67,6 +75,7 @@ export function LoadingAnimation() {
   const startRef = useRef<number | null>(null);
   const lastTRef = useRef<number>(0);
   const pausedAtRef = useRef<number | null>(null);
+  const hasCompletedRef = useRef(false);
 
   const firedExplosionsRef = useRef<Set<Company>>(new Set());
   const loopFnRef = useRef<((ts: number) => void) | null>(null);
@@ -80,6 +89,7 @@ export function LoadingAnimation() {
     settled: false,
     gradientProgress: 0,
     headerPhase: 0,
+    isExiting: false,
   });
 
   const companies = useMemo(() => LOGO_CONFIGS.map((c) => c.name), []);
@@ -98,31 +108,6 @@ export function LoadingAnimation() {
       }
       return next;
     });
-  }, []);
-
-  const resetCycleState = useCallback(() => {
-    firedExplosionsRef.current.clear();
-
-    setLetterColors(Array(11).fill(''));
-    setShowFinalGradient(false);
-    setSettled(false);
-    setGradientProgress(0);
-    setHeaderPhase(0);
-    setTriggerDecrypt(false);
-
-    setCurrentCompany(null);
-    setCompanyPhase('hidden');
-
-    if (particleRef.current?.clearParticles) {
-      particleRef.current.clearParticles();
-    }
-
-    mirrorRef.current.showFinalGradient = false;
-    mirrorRef.current.settled = false;
-    mirrorRef.current.currentCompany = null;
-    mirrorRef.current.companyPhase = 'hidden';
-    mirrorRef.current.gradientProgress = 0;
-    mirrorRef.current.headerPhase = 0;
   }, []);
 
   const triggerCompanyPoof = useCallback((company: Company) => {
@@ -167,7 +152,22 @@ export function LoadingAnimation() {
     }
   }, []);
 
-  // Build loop logic
+  // Trigger exit animation
+  const triggerExit = useCallback(() => {
+    if (hasCompletedRef.current) return;
+    hasCompletedRef.current = true;
+    
+    setIsExiting(true);
+    vibrate([30, 50, 30]);
+
+    // After exit animation completes, mark as complete
+    setTimeout(() => {
+      setIsComplete(true);
+      onComplete?.();
+    }, TIMINGS.exitDuration);
+  }, [onComplete]);
+
+  // Build loop logic - runs ONCE, no cycle
   useEffect(() => {
     const loopFn = (ts: number) => {
       if (document.hidden) {
@@ -182,16 +182,10 @@ export function LoadingAnimation() {
         } else {
           startRef.current = ts;
           lastTRef.current = 0;
-          resetCycleState();
         }
       }
 
-      const elapsed = ts - startRef.current;
-      const t = elapsed % TIMINGS.cycle;
-
-      if (t < lastTRef.current) {
-        resetCycleState();
-      }
+      const t = ts - startRef.current;
 
       // Header visibility
       const nextHeaderVisible = t >= TIMINGS.headerAppear;
@@ -274,6 +268,7 @@ export function LoadingAnimation() {
       const gradientEndTime = gradientStartTime + 800;
       const settledTime = gradientStartTime + 200;
       const headerRotateTime = gradientEndTime + TIMINGS.headerRotateDelay;
+      const exitTime = headerRotateTime + TIMINGS.exitDelay;
 
       // Smooth gradient progress
       let nextGradientProgress = 0;
@@ -302,10 +297,17 @@ export function LoadingAnimation() {
       if (mirrorRef.current.headerPhase !== nextHeaderPhase) {
         mirrorRef.current.headerPhase = nextHeaderPhase;
         setHeaderPhase(nextHeaderPhase);
-        // Trigger decrypt when switching to phase 1
         if (nextHeaderPhase === 1) {
           setTriggerDecrypt(true);
         }
+      }
+
+      // Trigger exit animation (NO LOOP - single run)
+      if (t >= exitTime && !mirrorRef.current.isExiting) {
+        mirrorRef.current.isExiting = true;
+        triggerExit();
+        // Stop the animation loop
+        return;
       }
 
       lastTRef.current = t;
@@ -313,7 +315,7 @@ export function LoadingAnimation() {
     };
 
     loopFnRef.current = loopFn;
-  }, [companies, companyByIndex, pause, resetCycleState, scheduleFrame, triggerCompanyPoof]);
+  }, [companies, companyByIndex, pause, scheduleFrame, triggerCompanyPoof, triggerExit]);
 
   // Visibility/focus handling
   useEffect(() => {
@@ -322,13 +324,13 @@ export function LoadingAnimation() {
         pause();
       } else {
         resume();
-        if (!rafRef.current) scheduleFrame();
+        if (!rafRef.current && !isComplete) scheduleFrame();
       }
     };
 
     const onBlur = () => pause();
     const onFocus = () => {
-      if (!document.hidden) {
+      if (!document.hidden && !isComplete) {
         resume();
         if (!rafRef.current) scheduleFrame();
       }
@@ -343,25 +345,16 @@ export function LoadingAnimation() {
       window.removeEventListener('blur', onBlur);
       window.removeEventListener('focus', onFocus);
     };
-  }, [pause, resume, scheduleFrame]);
+  }, [pause, resume, scheduleFrame, isComplete]);
 
-  // Start/stop animation - use setTimeout to avoid sync setState in effect
+  // Start animation
   useEffect(() => {
     if (prefersReducedMotion) {
       stop();
-      // Wrap in setTimeout to avoid sync setState warning
       const timer = setTimeout(() => {
-        setHeaderVisible(true);
-        setLogoVisible(true);
-        setShowFinalGradient(true);
-        setSettled(true);
-        setGradientProgress(1);
-        setHeaderPhase(1);
-        setTriggerDecrypt(true);
-        setCurrentCompany(null);
-        setCompanyPhase('hidden');
-        particleRef.current?.clearParticles?.();
-      }, 0);
+        setIsComplete(true);
+        onComplete?.();
+      }, 100);
       return () => clearTimeout(timer);
     }
 
@@ -369,7 +362,10 @@ export function LoadingAnimation() {
 
     scheduleFrame();
     return () => stop();
-  }, [prefersReducedMotion, stop, scheduleFrame]);
+  }, [prefersReducedMotion, stop, scheduleFrame, onComplete]);
+
+  // Don't render if complete
+  if (isComplete) return null;
 
   const LogoComponent = currentCompany ? LOGO_COMPONENTS[currentCompany] : null;
   const logoColors = currentCompany ? BRAND_COLORS[currentCompany] : [];
@@ -417,12 +413,33 @@ export function LoadingAnimation() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <motion.div
+      className="fixed inset-0 z-50 overflow-hidden"
+      initial={{ scale: 1, opacity: 1 }}
+      animate={
+        isExiting
+          ? {
+              scale: 2.5,
+              opacity: 0,
+              filter: 'blur(30px)',
+            }
+          : {
+              scale: 1,
+              opacity: 1,
+              filter: 'blur(0px)',
+            }
+      }
+      transition={{
+        duration: TIMINGS.exitDuration / 1000,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
       <NeuralBackground />
       <ParticleCanvas ref={particleRef} onLetterPainted={handleLetterPainted} />
 
       {/* Main content container */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pb-20">        {/* Rotating header: TALENT FROM → Now working for you */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pb-20">
+        {/* Rotating header: TALENT FROM → Now working for you */}
         <AnimatePresence>
           {headerVisible && (
             <motion.div
@@ -503,6 +520,6 @@ export function LoadingAnimation() {
           zIndex: 5,
         }}
       />
-    </div>
+    </motion.div>
   );
 }
