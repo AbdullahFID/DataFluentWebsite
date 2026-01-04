@@ -1,6 +1,14 @@
+// LoadingAnimation.tsx
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NeuralBackground } from './NeuralBackground';
 import { DatafluentLogo } from './DatafluentLogo';
@@ -29,29 +37,40 @@ const TIMINGS = {
   settleDuration: 900,
 
   // Text explosion phase
-  textExplodeDelay: 900,    // Give gradient time to settle
+  textExplodeDelay: 900, // Give gradient time to settle
   textExplodeDuration: 400, // Explosion animation
-  
-  // "Now working for you" reveal
-  revealDelay: 500,         // Dramatic pause after explosion (darkness)
-  revealDuration: 1400,     // Full reveal animation with scan
 
-  exitDelay: 2200,          // Time to admire the reveal
+  // "Now working for you" reveal
+  revealDelay: 500, // Dramatic pause after explosion (darkness)
+  revealDuration: 1400, // Full reveal animation with scan
+
+  exitDelay: 2200, // Time to admire the reveal
   exitDuration: 600,
 } as const;
 
 // ============================================================================
-// LOGO POSITIONS - Around the text, not on it
+// LOGO ORBIT (PX positioning) - Around the text, never on it
+// NOTE: We compute pixel positions from the Datafluent bounding box.
 // ============================================================================
-type LogoPosition = { x: string; y: string; origin: string };
 
-const LOGO_POSITIONS: Record<LogoDirection, LogoPosition> = {
-  'bottom-left': { x: '-45%', y: '35%', origin: 'bottom left' },
-  'top': { x: '0%', y: '-55%', origin: 'top center' },
-  'right': { x: '50%', y: '0%', origin: 'center right' },
-  'left': { x: '-50%', y: '0%', origin: 'center left' },
-  'bottom-right': { x: '45%', y: '35%', origin: 'bottom right' },
+type LogoOrbit = { vx: number; vy: number; origin: string };
+
+// vx/vy are direction multipliers from the text centre
+const LOGO_ORBITS: Record<LogoDirection, LogoOrbit> = {
+  'bottom-left': { vx: -0.85, vy: 0.85, origin: 'bottom left' },
+  top: { vx: 0, vy: -1, origin: 'top center' },
+  right: { vx: 1, vy: 0, origin: 'center right' },
+  left: { vx: -1, vy: 0, origin: 'center left' },
+  'bottom-right': { vx: 0.85, vy: 0.85, origin: 'bottom right' },
 };
+
+// Fixed “box” for logos so we can compute safe spacing deterministically.
+// (The actual SVG can be smaller; that’s fine—keeps it safely away.)
+const LOGO_BOX_SIZE = 200;
+
+function clampNum(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n));
+}
 
 // ============================================================================
 // HAPTIC FEEDBACK
@@ -107,12 +126,16 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
   const [triggerDecrypt, setTriggerDecrypt] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  
+
   // Text explosion state
   const [textExploding, setTextExploding] = useState(false);
   const [textExploded, setTextExploded] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
+
+  // Layout measurement state (client-only)
+  const [textBounds, setTextBounds] = useState<DOMRect | null>(null);
+  const [viewport, setViewport] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   // Refs
   const logoRef = useRef<HTMLDivElement>(null);
@@ -148,6 +171,39 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     (i: number): Company | null => LOGO_CONFIGS[i]?.name ?? null,
     []
   );
+
+  // ============================================================================
+  // MEASUREMENTS (client-only)
+  // ============================================================================
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateViewport = () => {
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = logoRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const update = () => setTextBounds(el.getBoundingClientRect());
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [logoVisible, textExploded]);
 
   // ============================================================================
   // HANDLERS
@@ -188,11 +244,12 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
 
     const letterEls = logoRoot.querySelectorAll('[data-letter-index]');
     const letterRects = Array.from(letterEls).map((el) => el.getBoundingClientRect());
-    
+
     // Get the current colors from letterColors state for the explosion
-    const currentColors = letterColors.length > 0 
-      ? letterColors.filter(Boolean) 
-      : ['#4ECDC4', '#4285F4', '#0668E1', '#8B5CF6', '#EC4899'];
+    const currentColors =
+      letterColors.length > 0
+        ? letterColors.filter(Boolean)
+        : ['#4ECDC4', '#4285F4', '#0668E1', '#8B5CF6', '#EC4899'];
 
     vibrate([40, 60, 40]);
     particle.explodeText(letterRects, currentColors);
@@ -349,11 +406,11 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
       const gradientStartTime = lastCompanyEnd + TIMINGS.settleDelay;
       const gradientEndTime = gradientStartTime + 600;
       const settledTime = gradientStartTime + 150;
-      
+
       // Text explosion timing
       const textExplodeTime = gradientEndTime + TIMINGS.textExplodeDelay;
       const textExplodedTime = textExplodeTime + TIMINGS.textExplodeDuration;
-      
+
       // Reveal timing
       const revealTime = textExplodedTime + TIMINGS.revealDelay;
       const exitTime = revealTime + TIMINGS.revealDuration + TIMINGS.exitDelay;
@@ -371,7 +428,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
 
       const nextGradient = t >= gradientEndTime;
       const nextSettled = t >= settledTime;
-      
+
       // Text explosion states
       const nextTextExploding = t >= textExplodeTime && t < textExplodedTime;
       const nextTextExploded = t >= textExplodedTime;
@@ -386,7 +443,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         setSettled(nextSettled);
         if (nextSettled) vibrate([20, 50, 20]);
       }
-      
+
       // Trigger text explosion
       if (!mirrorRef.current.textExploding && nextTextExploding) {
         mirrorRef.current.textExploding = true;
@@ -395,13 +452,13 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         setTimeout(() => setShowFlash(false), 150);
         triggerTextExplosion();
       }
-      
+
       // Mark text as exploded
       if (!mirrorRef.current.textExploded && nextTextExploded) {
         mirrorRef.current.textExploded = true;
         setTextExploded(true);
       }
-      
+
       // Show reveal text
       if (!mirrorRef.current.showReveal && nextShowReveal) {
         mirrorRef.current.showReveal = true;
@@ -508,19 +565,68 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
 
   const LogoComponent = currentCompany ? LOGO_COMPONENTS[currentCompany] : null;
   const logoColors = currentCompany ? BRAND_COLORS[currentCompany] : [];
-  const currentConfig = currentCompany
-    ? LOGO_CONFIGS.find((c) => c.name === currentCompany)
-    : null;
-  const logoPosition = currentConfig
-    ? LOGO_POSITIONS[currentConfig.entranceDirection]
-    : LOGO_POSITIONS['top'];
+  const currentConfig = currentCompany ? LOGO_CONFIGS.find((c) => c.name === currentCompany) : null;
+
+  const orbit = currentConfig ? LOGO_ORBITS[currentConfig.entranceDirection] : LOGO_ORBITS.top;
+
+  const logoPixelPos = useMemo(() => {
+    const vw = viewport.w || 0;
+    const vh = viewport.h || 0;
+
+    // If we don't know viewport yet, just place it offscreen-ish to avoid overlap flashes.
+    if (!vw || !vh) {
+      return { left: -9999, top: -9999 };
+    }
+
+    const cx = textBounds ? textBounds.left + textBounds.width / 2 : vw / 2;
+    const cy = textBounds ? textBounds.top + textBounds.height / 2 : vh / 2;
+
+    const halfTextW = textBounds ? textBounds.width / 2 : 140;
+    const halfTextH = textBounds ? textBounds.height / 2 : 50;
+
+    // Safety: during entry we animate from ~scale(2) -> scale(1)
+    const entryScaleSafety = 2;
+    const safeW = LOGO_BOX_SIZE * entryScaleSafety;
+    const safeH = LOGO_BOX_SIZE * entryScaleSafety;
+
+    const margin = clampNum(Math.round(Math.min(vw, vh) * 0.06), 18, 56);
+
+    const dx = halfTextW + margin + safeW / 2;
+    const dy = halfTextH + margin + safeH / 2;
+
+    const ox = orbit.vx * dx;
+    const oy = orbit.vy * dy;
+
+    const left = cx + ox - LOGO_BOX_SIZE / 2;
+    const top = cy + oy - LOGO_BOX_SIZE / 2;
+
+    // Keep on-screen
+    const pad = 10;
+    return {
+      left: clampNum(left, pad, vw - LOGO_BOX_SIZE - pad),
+      top: clampNum(top, pad, vh - LOGO_BOX_SIZE - pad),
+    };
+  }, [viewport.w, viewport.h, textBounds, orbit.vx, orbit.vy]);
 
   const getLogoStyle = (): React.CSSProperties => {
-    const baseTransform = `translate(${logoPosition.x}, ${logoPosition.y})`;
+    const base: React.CSSProperties = {
+      position: 'fixed',
+      left: `${logoPixelPos.left}px`,
+      top: `${logoPixelPos.top}px`,
+      width: `${LOGO_BOX_SIZE}px`,
+      height: `${LOGO_BOX_SIZE}px`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      willChange: 'transform, opacity, filter',
+      transformStyle: 'preserve-3d',
+      transformOrigin: orbit.origin,
+    };
 
     if (!currentCompany) {
       return {
-        transform: `${baseTransform} scale(2.2)`,
+        ...base,
+        transform: `translate3d(0,0,0) scale(2.2)`,
         opacity: 0,
         filter: 'blur(18px)',
         transition: 'none',
@@ -530,28 +636,32 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     switch (companyPhase) {
       case 'zooming':
         return {
-          transform: `${baseTransform} scale(2)`,
+          ...base,
+          transform: `translate3d(0,0,0) scale(2)`,
           opacity: 0,
           filter: 'blur(16px)',
           transition: 'none',
         };
       case 'visible':
         return {
-          transform: `${baseTransform} scale(1)`,
+          ...base,
+          transform: `translate3d(0,0,0) scale(1)`,
           opacity: 1,
           filter: 'blur(0px)',
           transition: `all ${TIMINGS.zoomInDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`,
         };
       case 'exploding':
         return {
-          transform: `${baseTransform} scale(1.12)`,
+          ...base,
+          transform: `translate3d(0,0,0) scale(1.12)`,
           opacity: 0,
           filter: 'blur(12px) brightness(2)',
           transition: `all ${TIMINGS.explodeDuration}ms ease-out`,
         };
       default:
         return {
-          transform: `${baseTransform} scale(2.2)`,
+          ...base,
+          transform: `translate3d(0,0,0) scale(2.2)`,
           opacity: 0,
           filter: 'blur(18px)',
           transition: 'none',
@@ -567,9 +677,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
       className="fixed inset-0 z-50 overflow-hidden"
       initial={{ scale: 1, opacity: 1 }}
       animate={
-        isExiting
-          ? { scale: 2.5, opacity: 0, filter: 'blur(30px)' }
-          : { scale: 1, opacity: 1, filter: 'blur(0px)' }
+        isExiting ? { scale: 2.5, opacity: 0, filter: 'blur(30px)' } : { scale: 1, opacity: 1, filter: 'blur(0px)' }
       }
       transition={{
         duration: TIMINGS.exitDuration / 1000,
@@ -589,7 +697,8 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, times: [0, 0.3, 1] }}
             style={{
-              background: 'radial-gradient(circle at center, rgba(255,255,255,0.9) 0%, rgba(66,133,244,0.4) 30%, transparent 70%)',
+              background:
+                'radial-gradient(circle at center, rgba(255,255,255,0.9) 0%, rgba(66,133,244,0.4) 30%, transparent 70%)',
               zIndex: 45,
             }}
           />
@@ -625,8 +734,8 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         <AnimatePresence>
           {!textExploded && (
             <motion.div
-              exit={{ 
-                opacity: 0, 
+              exit={{
+                opacity: 0,
                 scale: 1.3,
                 filter: 'blur(12px) brightness(3)',
               }}
@@ -636,9 +745,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
                 animate={{
                   opacity: textExploding ? 0 : 1,
                   scale: textExploding ? 1.15 : 1,
-                  filter: textExploding 
-                    ? 'blur(8px) brightness(2.5)' 
-                    : 'blur(0px) brightness(1)',
+                  filter: textExploding ? 'blur(8px) brightness(2.5)' : 'blur(0px) brightness(1)',
                 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
@@ -679,20 +786,14 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         </AnimatePresence>
       </div>
 
-      {/* FAANG logo display - POSITIONED AROUND the text */}
+      {/* FAANG logo display - POSITIONED AROUND the text (never overlaps) */}
       {currentCompany && LogoComponent && (
         <div
-          className="fixed inset-0 flex items-center justify-center pointer-events-none"
-          style={{ zIndex: 35, perspective: '1200px' }}
+          className="fixed inset-0 pointer-events-none"
+          // below Datafluent (z-10) as a failsafe, above vignette/background
+          style={{ zIndex: 9, perspective: '1200px' }}
         >
-          <div
-            ref={companyWrapperRef}
-            style={{
-              ...getLogoStyle(),
-              transformStyle: 'preserve-3d',
-              transformOrigin: logoPosition.origin,
-            }}
-          >
+          <div ref={companyWrapperRef} style={getLogoStyle()}>
             <div
               className="absolute inset-0 blur-3xl transition-opacity duration-200"
               style={{
@@ -710,8 +811,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background:
-            'radial-gradient(ellipse at center, transparent 0%, rgba(5,5,8,0.35) 100%)',
+          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(5,5,8,0.35) 100%)',
           zIndex: 5,
         }}
       />

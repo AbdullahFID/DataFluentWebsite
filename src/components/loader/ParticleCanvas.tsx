@@ -1,3 +1,4 @@
+// ParticleCanvas.tsx
 'use client';
 
 import {

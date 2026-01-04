@@ -1,3 +1,4 @@
+// brandColors.ts (or whatever file you placed this in)
 export const BRAND_COLORS = {
   google: ['#4285F4', '#EA4335', '#FBBC05', '#34A853'],
   apple: ['#A2AAAD', '#86868B', '#F5F5F7'],
