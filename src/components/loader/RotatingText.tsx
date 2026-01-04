@@ -4,23 +4,14 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 interface RotatingTextProps {
-  /** Array of texts to rotate through */
   texts: string[];
-  /** Current active index (controlled) */
   activeIndex: number;
-  /** Duration for each transition in ms */
   transitionDuration?: number;
-  /** Stagger delay between characters in ms */
   staggerDelay?: number;
-  /** Split mode: 'characters' | 'words' | 'none' */
   splitMode?: 'characters' | 'words' | 'none';
-  /** Class for container */
   className?: string;
-  /** Class for each text item */
   textClassName?: string;
-  /** Direction: 'up' (old goes up, new from bottom) or 'down' */
   direction?: 'up' | 'down';
-  /** Callback when transition completes */
   onTransitionComplete?: () => void;
 }
 
@@ -41,13 +32,12 @@ export function RotatingText({
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
-    
+
     if (prevIndexRef.current !== activeIndex) {
       prevIndexRef.current = activeIndex;
-      // Async to avoid sync setState warning
       timer = setTimeout(() => setKey((k) => k + 1), 0);
     }
-    
+
     return () => {
       if (timer) clearTimeout(timer);
     };
@@ -67,7 +57,6 @@ export function RotatingText({
   const parts = splitText(currentText);
   const yOffset = direction === 'up' ? 40 : -40;
 
-  // Cubic bezier easing - typed as tuple for Framer Motion
   const easeOut: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
   const containerVariants: Variants = {

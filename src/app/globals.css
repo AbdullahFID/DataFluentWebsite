@@ -1,8 +1,15 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #050508;
   --foreground: #ffffff;
+
+  /* Liquid Glass CSS Variables */
+  --glass-blur: 12px;
+  --glass-saturation: 180%;
+  --glass-opacity: 0.08;
+  --glass-border-opacity: 0.15;
+  --glass-highlight-opacity: 0.25;
 }
 
 * {
@@ -16,15 +23,27 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    'SF Pro Display',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: #4285F4;
+  background: #4285f4;
   color: #050508;
 }
 
-/* Hide scrollbar but allow scrolling */
+/* ============================================================================
+   SCROLLBAR STYLES
+============================================================================ */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -34,9 +53,204 @@ body {
   display: none;
 }
 
+/* ============================================================================
+   LIQUID GLASS UTILITIES
+   Inspired by Apple's iOS 26 Liquid Glass design language
+============================================================================ */
+
+/* Base glass effect */
+.liquid-glass {
+  position: relative;
+  background: rgba(255, 255, 255, var(--glass-opacity));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
+  border-radius: 16px;
+}
+
+/* Glass with inner highlight (top edge light refraction) */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, var(--glass-highlight-opacity)) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Glass with inner shadow for depth */
+.liquid-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+}
+
+/* Dark glass variant */
+.liquid-glass-dark {
+  --glass-opacity: 0.04;
+  --glass-border-opacity: 0.08;
+  --glass-highlight-opacity: 0.15;
+}
+
+/* Frosted glass variant (more blur, less transparency) */
+.liquid-glass-frosted {
+  --glass-blur: 20px;
+  --glass-opacity: 0.12;
+  --glass-saturation: 200%;
+}
+
+/* Force transparent background - prevents any inherited backgrounds */
+.bg-force-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* Gradient text with glass glow - NO visible rectangles */
+.liquid-glass-gradient {
+  position: relative;
+}
+
+/* ============================================================================
+   GOOEY / METABALL EFFECT
+   SVG filter for blob-like morphing animations
+============================================================================ */
+.gooey-filter {
+  filter: url('#gooey-effect');
+}
+
+/* ============================================================================
+   ANIMATION UTILITIES
+============================================================================ */
+
+/* Smooth fade in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+/* Pulse glow */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 40px currentColor);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Shimmer effect for subtle sweeps */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Chromatic aberration pulse - for glitch effects */
+@keyframes chromatic-pulse {
+  0%, 100% {
+    text-shadow: 
+      -2px 0 rgba(255, 0, 64, 0.5),
+      2px 0 rgba(0, 212, 255, 0.5);
+  }
+  50% {
+    text-shadow: 
+      -4px 0 rgba(255, 0, 64, 0.7),
+      4px 0 rgba(0, 212, 255, 0.7);
+  }
+}
+
+/* Breathing glow for text */
+@keyframes text-glow-breathe {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(66, 133, 244, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(66, 133, 244, 0.6));
+  }
+}
+
+.animate-glow-breathe {
+  animation: text-glow-breathe 3s ease-in-out infinite;
+}
+
+/* ============================================================================
+   REDUCED MOTION
+============================================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================================
+   MOBILE OPTIMIZATIONS
+============================================================================ */
+@media (max-width: 640px) {
+  .liquid-glass {
+    --glass-blur: 8px;
+  }
+
+  .liquid-glass-frosted {
+    --glass-blur: 12px;
+  }
+}
+
+/* ============================================================================
+   SVG FILTER DEFINITIONS
+   Include in your HTML for gooey effects
+============================================================================ */
+/*
+<svg style="display: none;">
+  <defs>
+    <filter id="gooey-effect">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+      <feColorMatrix
+        in="blur"
+        mode="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9"
+        result="gooey"
+      />
+      <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
+    </filter>
+  </defs>
+</svg>
+*/

@@ -23,21 +23,26 @@ export type Company = keyof typeof BRAND_COLORS;
  * 10 •
  */
 export const LOGO_LETTER_TARGETS: Record<Company, readonly number[]> = {
-  google: [0, 1, 2, 3],     // D a t a  (4 colors)
-  apple: [4],               // f (silver sheen)
-  meta: [5, 6],             // l u (meta blue)
-  microsoft: [7, 8],        // e n (multi-color splash)
-  amazon: [9, 10],          // t • (amazon orange)
+  google: [0, 1, 2, 3], // D a t a  (4 colors)
+  apple: [4], // f (silver sheen)
+  meta: [5, 6], // l u (meta blue)
+  microsoft: [7, 8], // e n (multi-color splash)
+  amazon: [9, 10], // t • (amazon orange)
 } as const;
 
 /**
- * Premium final gradient (closer to your spec: teal → blue → meta blue → purple → pink).
+ * Premium final gradient (teal → blue → meta blue → purple → pink)
  */
 export const FINAL_GRADIENT =
   'linear-gradient(90deg, #4ECDC4 0%, #4285F4 26%, #0668E1 46%, #8B5CF6 72%, #EC4899 100%)';
 
 // Logo entrance directions
-export type LogoDirection = 'bottom-left' | 'top' | 'right' | 'left' | 'bottom-right';
+export type LogoDirection =
+  | 'bottom-left'
+  | 'top'
+  | 'right'
+  | 'left'
+  | 'bottom-right';
 
 export interface LogoConfig {
   name: Company;
@@ -46,17 +51,41 @@ export interface LogoConfig {
   targets: readonly number[];
 }
 
-export const LOGO_CONFIGS: LogoConfig[] = [
-  { name: 'google', entranceDirection: 'bottom-left', colors: BRAND_COLORS.google, targets: LOGO_LETTER_TARGETS.google },
-  { name: 'apple', entranceDirection: 'top', colors: BRAND_COLORS.apple, targets: LOGO_LETTER_TARGETS.apple },
-  { name: 'meta', entranceDirection: 'right', colors: BRAND_COLORS.meta, targets: LOGO_LETTER_TARGETS.meta },
-  { name: 'microsoft', entranceDirection: 'left', colors: BRAND_COLORS.microsoft, targets: LOGO_LETTER_TARGETS.microsoft },
-  { name: 'amazon', entranceDirection: 'bottom-right', colors: BRAND_COLORS.amazon, targets: LOGO_LETTER_TARGETS.amazon },
-];
+export const LOGO_CONFIGS: readonly LogoConfig[] = [
+  {
+    name: 'google',
+    entranceDirection: 'bottom-left',
+    colors: BRAND_COLORS.google,
+    targets: LOGO_LETTER_TARGETS.google,
+  },
+  {
+    name: 'apple',
+    entranceDirection: 'top',
+    colors: BRAND_COLORS.apple,
+    targets: LOGO_LETTER_TARGETS.apple,
+  },
+  {
+    name: 'meta',
+    entranceDirection: 'right',
+    colors: BRAND_COLORS.meta,
+    targets: LOGO_LETTER_TARGETS.meta,
+  },
+  {
+    name: 'microsoft',
+    entranceDirection: 'left',
+    colors: BRAND_COLORS.microsoft,
+    targets: LOGO_LETTER_TARGETS.microsoft,
+  },
+  {
+    name: 'amazon',
+    entranceDirection: 'bottom-right',
+    colors: BRAND_COLORS.amazon,
+    targets: LOGO_LETTER_TARGETS.amazon,
+  },
+] as const;
 
 /**
- * Kept for compatibility (if you still use it elsewhere).
- * Generates an offset zone — not used by the new deterministic parade.
+ * Generate random position for logo spawn (legacy, kept for compatibility)
  */
 export function generateRandomPosition(): { x: number; y: number } {
   const zones = [

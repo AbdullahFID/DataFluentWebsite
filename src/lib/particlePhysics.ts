@@ -31,6 +31,10 @@ export function easeOutExpo(t: number): number {
   return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
 }
 
+export function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
 export function quadraticBezier(
   t: number,
   p0: { x: number; y: number },
@@ -42,4 +46,12 @@ export function quadraticBezier(
     x: mt * mt * p0.x + 2 * mt * t * p1.x + t * t * p2.x,
     y: mt * mt * p0.y + 2 * mt * t * p1.y + t * t * p2.y,
   };
+}
+
+export function lerp(start: number, end: number, t: number): number {
+  return start + (end - start) * t;
+}
+
+export function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
