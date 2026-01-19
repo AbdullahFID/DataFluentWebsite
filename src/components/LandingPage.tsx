@@ -1,7 +1,8 @@
+// LandingPage.tsx
 'use client';
 
 import { motion } from 'framer-motion';
-import { ScrollHero } from './landing';
+import { LiquidGlassHero } from '@/components/landing/LiquidGlassHero';
 
 interface LandingPageProps {
   visible: boolean;
@@ -15,10 +16,12 @@ export function LandingPage({ visible }: LandingPageProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
+      className="bg-[#050508]"
     >
-      <ScrollHero />
+      {/* Liquid Glass Metaball Hero */}
+      <LiquidGlassHero />
       
-      {/* Next section after scroll animation completes */}
+      {/* Next section */}
       <section className="min-h-screen bg-[#050508] flex items-center justify-center">
         <div className="text-center px-6">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">

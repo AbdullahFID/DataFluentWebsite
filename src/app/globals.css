@@ -254,3 +254,69 @@ body {
   </defs>
 </svg>
 */
+
+/* === Metaball constellation === */
+
+.glass-blob {
+  position: relative;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.glass-blob::before {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  border-radius: inherit;
+  background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.18), transparent 55%);
+  pointer-events: none;
+}
+
+.glass-blob::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.10),
+    inset 0 -1px 1px rgba(0,0,0,0.18);
+  pointer-events: none;
+}
+
+.metaball-bridge {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+.nucleus-glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
+}
+
+.datafluent-letter-base {
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: rgba(255, 255, 255, 0.14);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.30);
+}
+
+.datafluent-letter-fill {
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.10);
+}

@@ -45,6 +45,9 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     useImperativeHandle(
       ref,
       () => ({
+        // ====================================================================
+        // ORIGINAL explodeLogo - UNCHANGED
+        // ====================================================================
         explodeLogo: (company, sourceRect, letterRects) => {
           if (!isMountedRef.current) return;
 
@@ -117,41 +120,70 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           });
         },
 
+        // ====================================================================
+        // REFINED explodeText - Apple-style vaporization/dissolution
+        // ====================================================================
         explodeText: (letterRects, colors) => {
           if (!isMountedRef.current) return;
 
           const isMobile = window.innerWidth < 768;
-          const particlesPerLetter = isMobile ? 28 : 50;
+          
+          // More particles, smaller size = vapor/dust effect
+          const particlesPerLetter = isMobile ? 80 : 150;
+
+          // Calculate center for directional coherence
+          const allCenterX = letterRects.reduce((sum, r) => sum + r.left + r.width / 2, 0) / letterRects.length;
+          const allCenterY = letterRects.reduce((sum, r) => sum + r.top + r.height / 2, 0) / letterRects.length;
 
           letterRects.forEach((rect, i) => {
             if (!rect || rect.width === 0) return;
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+            
+            const letterCenterX = rect.left + rect.width / 2;
+            const letterCenterY = rect.top + rect.height / 2;
             const color = colors[i % colors.length] || '#FFFFFF';
+            
+            // Direction: outward from text center, biased upward
+            const angleFromCenter = Math.atan2(
+              letterCenterY - allCenterY,
+              letterCenterX - allCenterX
+            );
 
             for (let j = 0; j < particlesPerLetter; j++) {
-              const angle = Math.random() * Math.PI * 2;
-              const burstForce = 8 + Math.random() * 12;
-
+              // Spawn across the letter area
+              const spawnX = rect.left + Math.random() * rect.width;
+              const spawnY = rect.top + Math.random() * rect.height;
+              
+              // Velocity: mostly upward drift with slight outward spread
+              // Apple-style = float up and dissolve, not explode outward
+              const spreadAngle = angleFromCenter * 0.3 + (Math.random() - 0.5) * 0.6;
+              const upwardBias = -Math.PI / 2; // Point up
+              const finalAngle = upwardBias + spreadAngle * 0.4;
+              
+              // Gentle speed, not explosive
+              const speed = 0.8 + Math.random() * 1.2;
+              
               particlesRef.current.push({
                 id: Date.now() + Math.random(),
-                x: centerX + (Math.random() - 0.5) * rect.width,
-                y: centerY + (Math.random() - 0.5) * rect.height,
-                startX: centerX,
-                startY: centerY,
-                targetX: centerX + Math.cos(angle) * (isMobile ? 300 : 450),
-                targetY: centerY + Math.sin(angle) * (isMobile ? 300 : 450),
-                controlX: centerX,
-                controlY: centerY,
+                x: spawnX,
+                y: spawnY,
+                startX: spawnX,
+                startY: spawnY,
+                // Target is just "far away" in the drift direction
+                targetX: spawnX + Math.cos(finalAngle) * 400,
+                targetY: spawnY + Math.sin(finalAngle) * 400 - 200, // Extra upward
+                controlX: spawnX,
+                controlY: spawnY - 100,
                 color,
-                size: 2 + Math.random() * 3.5,
-                alpha: 1,
+                // Smaller particles = dust/vapor aesthetic
+                size: 0.5 + Math.random() * 1.5,
+                alpha: 0.9,
                 progress: 0,
-                delay: i * 0.015 + Math.random() * 0.04,
-                speed: 0.016 + Math.random() * 0.008,
+                // Staggered: letters dissolve left-to-right
+                delay: i * 0.02 + Math.random() * 0.03,
+                speed: 0.008 + Math.random() * 0.006, // Slower = more elegant
                 phase: 'burst',
-                burstVx: Math.cos(angle) * burstForce,
-                burstVy: Math.sin(angle) * burstForce,
+                burstVx: Math.cos(finalAngle) * speed,
+                burstVy: Math.sin(finalAngle) * speed,
                 burstProgress: 0,
                 rotation: Math.random() * Math.PI * 2,
                 letterIndex: -1,
@@ -185,7 +217,7 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap DPR for performance
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const width = window.innerWidth;
       const height = window.innerHeight;
 
@@ -200,7 +232,7 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     }, []);
 
     // ========================================================================
-    // ANIMATION LOOP
+    // ANIMATION LOOP - Modified to handle vapor-style text explosion
     // ========================================================================
     const animate = useCallback(() => {
       if (!isMountedRef.current) return;
@@ -222,18 +254,61 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           return;
         }
 
-        if (p.phase === 'burst') {
-          p.x += p.burstVx;
-          p.y += p.burstVy;
-          p.burstVx *= 0.91;
-          p.burstVy *= 0.91;
-          p.burstVy += 0.18;
-          p.burstProgress += 0.03;
-          p.rotation += 0.08;
+        // Check if this is a "text explosion" particle (letterIndex === -1)
+        const isTextExplosion = p.letterIndex === -1;
 
-          if (p.burstProgress >= 0.25) {
-            p.phase = 'hover';
-            p.progress = 0;
+        if (p.phase === 'burst') {
+          if (isTextExplosion) {
+            // ================================================================
+            // VAPOR-STYLE BURST for text explosion
+            // ================================================================
+            p.x += p.burstVx;
+            p.y += p.burstVy;
+            
+            // Gentle deceleration
+            p.burstVx *= 0.985;
+            p.burstVy *= 0.985;
+            
+            // Slight upward float (negative gravity)
+            p.burstVy -= 0.02;
+            
+            // Add subtle horizontal drift (wind)
+            p.burstVx += (Math.random() - 0.5) * 0.03;
+            
+            p.burstProgress += 0.012;
+            p.rotation += 0.01; // Slower rotation
+            
+            // Gradual fade out
+            if (p.burstProgress > 0.3) {
+              p.alpha *= 0.992;
+            }
+            
+            // Shrink over time
+            if (p.burstProgress > 0.5) {
+              p.size *= 0.998;
+            }
+            
+            // Remove when faded or too far
+            if (p.alpha < 0.02 || p.burstProgress > 1.5) {
+              dead.push(idx);
+              return;
+            }
+          } else {
+            // ================================================================
+            // ORIGINAL BURST for logo explosion (unchanged)
+            // ================================================================
+            p.x += p.burstVx;
+            p.y += p.burstVy;
+            p.burstVx *= 0.91;
+            p.burstVy *= 0.91;
+            p.burstVy += 0.18;
+            p.burstProgress += 0.03;
+            p.rotation += 0.08;
+
+            if (p.burstProgress >= 0.25) {
+              p.phase = 'hover';
+              p.progress = 0;
+            }
           }
         } else if (p.phase === 'hover') {
           p.progress += 0.06;
@@ -258,11 +333,9 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           p.x = pos.x;
           p.y = pos.y;
 
-          // Paint letter when close to target
           if (p.progress >= 0.84 && !p.hasPainted && p.letterIndex >= 0) {
             if (!paintedLettersRef.current.has(p.letterIndex)) {
               paintedLettersRef.current.add(p.letterIndex);
-              // Use setTimeout to avoid React setState during render
               setTimeout(() => {
                 if (isMountedRef.current) {
                   onLetterPainted(p.letterIndex, p.color);
@@ -284,31 +357,53 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           }
         }
 
-        // Draw particle
+        // ====================================================================
+        // RENDER - Different styles for text vs logo particles
+        // ====================================================================
         ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation);
+        
+        if (isTextExplosion) {
+          // Soft, blurred vapor particles for text explosion
+          const gradient = ctx.createRadialGradient(
+            p.x, p.y, 0,
+            p.x, p.y, p.size * 3
+          );
+          gradient.addColorStop(0, p.color);
+          gradient.addColorStop(0.3, `${p.color}aa`);
+          gradient.addColorStop(0.6, `${p.color}44`);
+          gradient.addColorStop(1, 'transparent');
+          
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Original rendering for logo particles
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
 
-        // Glow
-        ctx.globalAlpha = p.alpha * 0.5;
-        const glowSize = p.size * 3.5;
-        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
-        grad.addColorStop(0, p.color);
-        grad.addColorStop(1, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
-        ctx.fill();
+          // Glow
+          ctx.globalAlpha = p.alpha * 0.5;
+          const glowSize = p.size * 3.5;
+          const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+          grad.addColorStop(0, p.color);
+          grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+          ctx.fill();
 
-        // Core particle
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          // Core particle
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        }
 
         ctx.restore();
       });
 
-      // Remove dead particles (iterate backwards to avoid index issues)
+      // Remove dead particles
       for (let i = dead.length - 1; i >= 0; i--) {
         particlesRef.current.splice(dead[i], 1);
       }
@@ -324,8 +419,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
 
       handleResize();
       window.addEventListener('resize', handleResize);
-
-      // Start animation loop
       animationRef.current = requestAnimationFrame(animate);
 
       return () => {
@@ -337,7 +430,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           animationRef.current = null;
         }
 
-        // Clear particles on unmount
         particlesRef.current = [];
         paintedLettersRef.current.clear();
       };
