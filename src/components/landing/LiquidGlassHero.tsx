@@ -149,7 +149,7 @@ export function LiquidGlassHero() {
 }
 
 // ============================================================================
-// CENTER ANCHOR - Matches Datafluent text width, blobs emerge from it
+// CENTER ANCHOR - Wide pill covering full Datafluent text
 // ============================================================================
 function CenterAnchor({
   scrollProgress,
@@ -158,15 +158,15 @@ function CenterAnchor({
   scrollProgress: MotionValue<number>;
   isMobile: boolean;
 }) {
-  // Match Datafluent text width approximately
-  const width = isMobile ? 280 : 700;
-  const height = isMobile ? 70 : 120;
+  // Wide pill to cover the entire Datafluent text
+  const width = isMobile ? 340 : 1000;
+  const height = isMobile ? 80 : 180;
   
   // Visible during stretch phase, fades as blobs settle
   const opacity = useTransform(
     scrollProgress, 
-    [0, 0.03, 0.15, 0.4, 0.55], 
-    [0, 0.5, 0.6, 0.4, 0]
+    [0, 0.02, 0.1, 0.35, 0.5], 
+    [0, 0.5, 0.55, 0.4, 0]
   );
   
   // Slight shrink as blobs "pull mass" away
@@ -174,7 +174,7 @@ function CenterAnchor({
 
   return (
     <motion.div
-      className="absolute rounded-full"
+      className="absolute"
       style={{
         width,
         height,
@@ -184,31 +184,33 @@ function CenterAnchor({
         marginTop: -height / 2,
         opacity,
         scale,
-        background: `radial-gradient(ellipse at 50% 40%,
-          rgba(90, 100, 130, 0.55) 0%,
-          rgba(70, 80, 110, 0.45) 40%,
-          rgba(50, 55, 75, 0.35) 70%,
-          rgba(35, 40, 55, 0.2) 100%
+        borderRadius: height / 2, // Pill shape
+        background: `radial-gradient(ellipse 100% 100% at 50% 45%,
+          rgba(85, 95, 125, 0.5) 0%,
+          rgba(65, 75, 105, 0.45) 30%,
+          rgba(50, 58, 80, 0.4) 60%,
+          rgba(40, 45, 65, 0.3) 100%
         )`,
         boxShadow: `
-          inset 0 4px 30px rgba(255,255,255,0.08),
-          inset 0 -4px 30px rgba(0,0,0,0.3)
+          inset 0 6px 35px rgba(255,255,255,0.08),
+          inset 0 -6px 35px rgba(0,0,0,0.3)
         `,
       }}
     >
-      {/* Subtle top highlight */}
+      {/* Subtle top highlight across the pill */}
       <div
-        className="absolute rounded-full"
+        className="absolute"
         style={{
-          width: '50%',
+          width: '70%',
           height: '35%',
           top: '12%',
-          left: '25%',
+          left: '15%',
+          borderRadius: '999px',
           background: `linear-gradient(180deg, 
-            rgba(255,255,255,0.15) 0%, 
+            rgba(255,255,255,0.12) 0%, 
             transparent 100%
           )`,
-          filter: 'blur(3px)',
+          filter: 'blur(4px)',
         }}
       />
     </motion.div>
