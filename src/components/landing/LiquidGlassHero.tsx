@@ -134,8 +134,8 @@ export function LiquidGlassHero() {
 
   const maxDistance = isMobile ? 130 : 220;
 
-  const pillOpacity = useTransform(scrollYProgress, [0, 0.05, 0.15, 0.6], [0, 0, 0.95, 0.8]);
-  const pillScale = useTransform(scrollYProgress, [0, 0.15, 0.5], [0.96, 1, 0.92]);
+  const pillOpacity = useTransform(scrollYProgress, [0, 0.04, 0.12, 0.5], [0, 0, 0.95, 0.75]);
+  const pillScale = useTransform(scrollYProgress, [0, 0.12, 0.4], [0.96, 1, 0.92]);
 
   // Edge/border color for gooey effect - more visible
   const edgeColor = 'rgba(140, 150, 175, 0.7)';
@@ -145,7 +145,7 @@ export function LiquidGlassHero() {
     <section
       ref={sectionRef}
       className="relative bg-[#050508]"
-      style={{ height: '500vh' }}
+      style={{ height: '350vh' }}
     >
       <GooeyFilter id="goo" />
 
@@ -339,12 +339,12 @@ function GooeyOrbEdge({
   const baseEdge = ellipseRadiusAtAngle(a, b, config.angle);
   const edge = useTransform(pillScale, (s) => baseEdge * (s as number));
 
-  // Slower timing
-  const staggerDelay = index * 0.045;
-  const startAt = 0.12 + staggerDelay;
-  const peakAt = startAt + 0.12;
-  const bounceAt = peakAt + 0.04;
-  const settleAt = startAt + 0.28;
+  // Faster timing
+  const staggerDelay = index * 0.035;
+  const startAt = 0.10 + staggerDelay;
+  const peakAt = startAt + 0.08;
+  const bounceAt = peakAt + 0.03;
+  const settleAt = startAt + 0.18;
 
   const rawPull = useTransform(
     scrollProgress,
@@ -359,9 +359,9 @@ function GooeyOrbEdge({
   });
 
   const phase = index * 1.2 + config.angle;
-  const floatAmp = isMobile ? 2.5 : 4;
-  const floatX = useTransform(time, (t) => Math.sin(t / 1500 + phase) * floatAmp);
-  const floatY = useTransform(time, (t) => Math.cos(t / 1700 + phase * 1.2) * floatAmp * 0.75);
+  const floatAmp = isMobile ? 6 : 10;  // More noticeable float
+  const floatX = useTransform(time, (t) => Math.sin(t / 1200 + phase) * floatAmp);
+  const floatY = useTransform(time, (t) => Math.cos(t / 1400 + phase * 1.2) * floatAmp * 0.8);
 
   const dist = useTransform2(edge, pull, (e, p) => e + p);
   const baseX = useTransform(dist, (d) => Math.cos(config.angle) * d);
@@ -369,12 +369,12 @@ function GooeyOrbEdge({
   const x = useTransform2(baseX, floatX, (bx, fx) => bx + fx);
   const y = useTransform2(baseY, floatY, (by, fy) => by + fy);
 
-  const opacity = useTransform(scrollProgress, [startAt - 0.02, startAt + 0.05], [0, 0.95]);
+  const opacity = useTransform(scrollProgress, [startAt - 0.01, startAt + 0.04], [0, 0.95]);
 
-  // Membrane fades out after settle
+  // Membrane fades out faster after settle
   const membraneOpacity = useTransform(
     scrollProgress,
-    [startAt, startAt + 0.05, settleAt - 0.02, settleAt + 0.08],
+    [startAt, startAt + 0.04, settleAt - 0.01, settleAt + 0.04],
     [0, 1, 1, 0]
   );
 
@@ -492,12 +492,12 @@ function FrostedGlassOrb({
   const baseEdge = ellipseRadiusAtAngle(a, b, config.angle);
   const edge = useTransform(pillScale, (s) => baseEdge * (s as number));
 
-  // Same timing as edge
-  const staggerDelay = index * 0.045;
-  const startAt = 0.12 + staggerDelay;
-  const peakAt = startAt + 0.12;
-  const bounceAt = peakAt + 0.04;
-  const settleAt = startAt + 0.28;
+  // Faster timing to match gooey layer
+  const staggerDelay = index * 0.035;
+  const startAt = 0.10 + staggerDelay;
+  const peakAt = startAt + 0.08;
+  const bounceAt = peakAt + 0.03;
+  const settleAt = startAt + 0.18;
 
   const rawPull = useTransform(
     scrollProgress,
@@ -512,9 +512,9 @@ function FrostedGlassOrb({
   });
 
   const phase = index * 1.2 + config.angle;
-  const floatAmp = isMobile ? 2.5 : 4;
-  const floatX = useTransform(time, (t) => Math.sin(t / 1500 + phase) * floatAmp);
-  const floatY = useTransform(time, (t) => Math.cos(t / 1700 + phase * 1.2) * floatAmp * 0.75);
+  const floatAmp = isMobile ? 6 : 10;  // More noticeable float
+  const floatX = useTransform(time, (t) => Math.sin(t / 1200 + phase) * floatAmp);
+  const floatY = useTransform(time, (t) => Math.cos(t / 1400 + phase * 1.2) * floatAmp * 0.8);
 
   const dist = useTransform2(edge, pull, (e, p) => e + p);
   const baseX = useTransform(dist, (d) => Math.cos(config.angle) * d);
@@ -522,11 +522,11 @@ function FrostedGlassOrb({
   const x = useTransform2(baseX, floatX, (bx, fx) => bx + fx);
   const y = useTransform2(baseY, floatY, (by, fy) => by + fy);
 
-  const opacity = useTransform(scrollProgress, [startAt + 0.02, startAt + 0.1], [0, 1]);
+  const opacity = useTransform(scrollProgress, [startAt + 0.02, startAt + 0.08], [0, 1]);
   
   const popScale = useTransform(
     scrollProgress,
-    [startAt, startAt + 0.06, startAt + 0.12, settleAt],
+    [startAt, startAt + 0.04, startAt + 0.08, settleAt],
     [0.2, 0.2, 1.08, 1]
   );
   const scale = useSpring(popScale, { stiffness: 250, damping: 16 });
@@ -617,7 +617,7 @@ function FrostedGlassOrb({
 // SCROLL INDICATOR
 // ============================================================================
 function ScrollIndicator({ scrollProgress }: { scrollProgress: MotionValue<number> }) {
-  const opacity = useTransform(scrollProgress, [0, 0.08], [1, 0]);
+  const opacity = useTransform(scrollProgress, [0, 0.06], [1, 0]);
 
   return (
     <motion.div
