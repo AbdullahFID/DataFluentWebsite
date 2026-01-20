@@ -77,11 +77,11 @@ function GooeyFilter({ id }: { id: string }) {
     <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
       <defs>
         <filter id={id}>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
           <feColorMatrix
             in="blur"
             mode="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"
             result="gooey"
           />
           <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
@@ -164,8 +164,8 @@ export function LiquidGlassHero() {
               height: pillHeight,
               scale: pillScale,
               opacity: pillOpacity,
-              // Brighter for visible gooey effect
-              background: 'rgba(120, 135, 165, 0.75)',
+              // Slightly lighter for subtler border
+              background: 'rgba(110, 125, 155, 0.65)',
             }}
           />
 
@@ -192,8 +192,8 @@ export function LiquidGlassHero() {
         <motion.div
           className="absolute rounded-full"
           style={{
-            width: pillWidth - (isMobile ? 14 : 20),  // Larger = thinner border
-            height: pillHeight - (isMobile ? 14 : 20),
+            width: pillWidth - (isMobile ? 8 : 12),  // Even thinner border
+            height: pillHeight - (isMobile ? 8 : 12),
             scale: pillScale,
             opacity: pillOpacity,
             background: '#050508',  // Same as page background
@@ -433,12 +433,12 @@ function GooeyOrbEdge({
     >
       {/* Membrane beads - solid for proper gooey merging */}
       <motion.div style={{ opacity: membraneOpacity }}>
-        <motion.div className="absolute rounded-full" style={{ width: bead0Size, height: bead0Size, x: b0X, y: b0Y, translateX: '-50%', translateY: '-50%', background: 'rgba(120, 135, 165, 0.75)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead1Size, height: bead1Size, x: b1X, y: b1Y, translateX: '-50%', translateY: '-50%', background: 'rgba(120, 135, 165, 0.75)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead2Size, height: bead2Size, x: b2X, y: b2Y, translateX: '-50%', translateY: '-50%', background: 'rgba(120, 135, 165, 0.75)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead3Size, height: bead3Size, x: b3X, y: b3Y, translateX: '-50%', translateY: '-50%', background: 'rgba(120, 135, 165, 0.75)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead4Size, height: bead4Size, x: b4X, y: b4Y, translateX: '-50%', translateY: '-50%', background: 'rgba(120, 135, 165, 0.75)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead5Size, height: bead5Size, x: b5X, y: b5Y, translateX: '-50%', translateY: '-50%', background: 'rgba(120, 135, 165, 0.75)' }} />
+        <motion.div className="absolute rounded-full" style={{ width: bead0Size, height: bead0Size, x: b0X, y: b0Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
+        <motion.div className="absolute rounded-full" style={{ width: bead1Size, height: bead1Size, x: b1X, y: b1Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
+        <motion.div className="absolute rounded-full" style={{ width: bead2Size, height: bead2Size, x: b2X, y: b2Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
+        <motion.div className="absolute rounded-full" style={{ width: bead3Size, height: bead3Size, x: b3X, y: b3Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
+        <motion.div className="absolute rounded-full" style={{ width: bead4Size, height: bead4Size, x: b4X, y: b4Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
+        <motion.div className="absolute rounded-full" style={{ width: bead5Size, height: bead5Size, x: b5X, y: b5Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
       </motion.div>
 
       {/* Main orb - solid for gooey */}
@@ -451,7 +451,7 @@ function GooeyOrbEdge({
           y,
           translateX: '-50%',
           translateY: '-50%',
-          background: 'rgba(120, 135, 165, 0.75)',
+          background: 'rgba(110, 125, 155, 0.65)',
         }}
       />
     </motion.div>
@@ -484,7 +484,7 @@ function FrostedGlassOrb({
 }) {
   const Logo = LOGO_COMPONENTS[config.id];
   const orbSize = isMobile ? 85 : 130;
-  const innerOrbSize = orbSize - (isMobile ? 6 : 8);  // Larger = thinner border
+  const innerOrbSize = orbSize - (isMobile ? 4 : 5);  // Even thinner border
   const logoSize = isMobile ? 40 : 60;
 
   const a = pillWidth / 2;
