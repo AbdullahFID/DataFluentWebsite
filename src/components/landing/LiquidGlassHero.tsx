@@ -1,4 +1,4 @@
-// LiquidGlassHero.tsx — Performance Optimized
+// LiquidGlassHero.tsx — Performance Optimized with LightRays, Galaxy & Planetary Effects
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
@@ -14,18 +14,36 @@ import {
 } from 'framer-motion';
 import { LOGO_COMPONENTS } from '@/components/loader/FaangLogos';
 import { BRAND_COLORS, Company } from '@/lib/brandColors';
-import FloatingLines from '@/components/backgrounds/FloatingLines';
-import DarkVeil from '@/components/backgrounds/DarkVeil';
+import LightRays from '@/components/backgrounds/LightRays';
+import Galaxy from '@/components/backgrounds/Galaxy';
 
-const DATAFLUENT_LINE_GRADIENT = [
-  '#4FD1C5',
-  '#63B3ED',
-  '#7C3AED',
-  '#A855F7',
-  '#EC4899',
-];
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+const LIGHT_RAYS_CONFIG = {
+  color: '#ffffff',
+  origin: 'top-center' as const,
+  speed: 0.8,
+  lightSpread: 0.6,
+  rayLength: 2.5,
+  fadeDistance: 1.2,
+  saturation: 1.0,
+  distortion: 0.15,
+  noiseAmount: 0.02,
+};
 
-const DARK_VEIL_HUE_SHIFT = 280;
+const GALAXY_CONFIG = {
+  hueShift: 280,
+  density: 1.2,
+  glowIntensity: 0.4,
+  saturation: 0.3,
+  twinkleIntensity: 0.4,
+  rotationSpeed: 0.05,
+  starSpeed: 0.3,
+  speed: 0.8,
+  autoCenterRepulsion: 0,
+  repulsionStrength: 3,
+};
 
 interface BlobConfig {
   id: Company;
@@ -34,13 +52,14 @@ interface BlobConfig {
 }
 
 const COMPANIES: BlobConfig[] = [
-  { id: 'google', angle: -Math.PI * 0.85, color: BRAND_COLORS.google[0] },
-  { id: 'apple', angle: -Math.PI * 0.42, color: '#E8E8E8' },
-  { id: 'meta', angle: -Math.PI * 0.15, color: BRAND_COLORS.meta[0] },
-  { id: 'microsoft', angle: Math.PI * 0.75, color: BRAND_COLORS.microsoft[2] },
-  { id: 'amazon', angle: Math.PI * 0.25, color: BRAND_COLORS.amazon[0] },
+  { id: 'google', angle: -Math.PI * 0.82, color: BRAND_COLORS.google[0] },
+  { id: 'apple', angle: -Math.PI * 0.54, color: '#E8E8E8' },
+  { id: 'tiktok', angle: -Math.PI * 0.26, color: '#25F4EE' },
+  { id: 'meta', angle: -Math.PI * 0.06, color: BRAND_COLORS.meta[0] },        // Changed from 0.02 to -0.06
+  { id: 'amazon', angle: Math.PI * 0.30, color: BRAND_COLORS.amazon[0] },
+  { id: 'tesla', angle: Math.PI * 0.58, color: '#E82127' },
+  { id: 'microsoft', angle: Math.PI * 0.86, color: BRAND_COLORS.microsoft[2] },
 ];
-
 
 // ============================================================================
 // HELPERS
@@ -106,37 +125,20 @@ function GooeyFilter({ id }: { id: string }) {
 export function LiquidGlassHero() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isMobile, setIsMobile] = useState(false);
-  
-  // === LAZY MOUNTING STATE ===
-  const [showFloatingLines, setShowFloatingLines] = useState(true);
-  const [showDarkVeil, setShowDarkVeil] = useState(false);
+
+  const [showLightRays, setShowLightRays] = useState(true);
+  const [showGalaxy, setShowGalaxy] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end end'],
   });
 
-  // === LAZY MOUNT/UNMOUNT BASED ON SCROLL ===
   useMotionValueEvent(scrollYProgress, 'change', (latest) => {
-    // Mount DarkVeil when approaching crossfade
-    if (latest > 0.25 && !showDarkVeil) {
-      setShowDarkVeil(true);
-    }
-    
-    // Unmount FloatingLines when fully faded
-    if (latest > 0.7 && showFloatingLines) {
-      setShowFloatingLines(false);
-    }
-    
-    // Re-mount FloatingLines if scrolling back up
-    if (latest < 0.6 && !showFloatingLines) {
-      setShowFloatingLines(true);
-    }
-    
-    // Unmount DarkVeil if scrolling back to top
-    if (latest < 0.2 && showDarkVeil) {
-      setShowDarkVeil(false);
-    }
+    if (latest > 0.25 && !showGalaxy) setShowGalaxy(true);
+    if (latest > 0.7 && showLightRays) setShowLightRays(false);
+    if (latest < 0.6 && !showLightRays) setShowLightRays(true);
+    if (latest < 0.2 && showGalaxy) setShowGalaxy(false);
   });
 
   const time = useMotionValue(0);
@@ -172,25 +174,26 @@ export function LiquidGlassHero() {
 
   const pillOpacity = useTransform(scrollYProgress, [0, 0.06, 0.2, 0.7, 0.9], [0, 0, 0.95, 0.5, 0]);
   const pillScale = useTransform(scrollYProgress, [0, 0.2, 0.8], [0.96, 1, 0.92]);
-  
-  // === BACKGROUND CROSSFADE ===
-  const floatingLinesOpacity = useTransform(
-    scrollYProgress, 
-    [0, 0.15, 0.45, 0.65], 
-    [0.7, 0.5, 0.2, 0]
-  );
-  
-  const darkVeilOpacity = useTransform(
-    scrollYProgress, 
-    [0.35, 0.55, 0.75, 1.0], 
-    [0, 0.4, 0.7, 0.85]
+
+  const lightRaysOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.45, 0.65],
+    [0.8, 0.6, 0.25, 0]
   );
 
-  // === MEMOIZED PERFORMANCE SETTINGS ===
-  const perfSettings = useMemo(() => ({
-    maxDpr: isMobile ? 1 : 1.5,
-    targetFps: isMobile ? 24 : 30,
-  }), [isMobile]);
+  const galaxyOpacity = useTransform(
+    scrollYProgress,
+    [0.35, 0.55, 0.75, 1.0],
+    [0, 0.5, 0.8, 1.0]
+  );
+
+  const perfSettings = useMemo(
+    () => ({
+      maxDpr: isMobile ? 1 : 1.5,
+      targetFps: isMobile ? 24 : 30,
+    }),
+    [isMobile]
+  );
 
   return (
     <section
@@ -201,54 +204,56 @@ export function LiquidGlassHero() {
       <GooeyFilter id="goo" />
 
       <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
-        
-        {/* === FLOATING LINES BACKGROUND (lazy mounted, fades out) === */}
-        {showFloatingLines && (
-          <motion.div 
+        {/* === LIGHT RAYS BACKGROUND === */}
+        {showLightRays && (
+          <motion.div
             className="absolute inset-0 z-0"
-            style={{ opacity: floatingLinesOpacity }}
+            style={{ opacity: lightRaysOpacity }}
           >
-            <FloatingLines
-              linesGradient={DATAFLUENT_LINE_GRADIENT}
-              enabledWaves={['top', 'middle', 'bottom']}
-              lineCount={[3, 4, 3]}
-              lineDistance={[6, 5, 7]}
-              animationSpeed={0.6}
-              interactive={!isMobile}
-              bendRadius={5}
-              bendStrength={-0.5}
-              parallax={!isMobile}
-              parallaxStrength={0.15}
-              mixBlendMode="screen"
-              topWavePosition={{ x: 8.0, y: 0.6, rotate: -0.3 }}
-              middleWavePosition={{ x: 4.0, y: 0.0, rotate: 0.15 }}
-              bottomWavePosition={{ x: 2.0, y: -0.6, rotate: 0.3 }}
+            <LightRays
+              raysOrigin={LIGHT_RAYS_CONFIG.origin}
+              raysColor={LIGHT_RAYS_CONFIG.color}
+              raysSpeed={LIGHT_RAYS_CONFIG.speed}
+              lightSpread={LIGHT_RAYS_CONFIG.lightSpread}
+              rayLength={LIGHT_RAYS_CONFIG.rayLength}
+              fadeDistance={LIGHT_RAYS_CONFIG.fadeDistance}
+              saturation={LIGHT_RAYS_CONFIG.saturation}
+              distortion={LIGHT_RAYS_CONFIG.distortion}
+              noiseAmount={LIGHT_RAYS_CONFIG.noiseAmount}
+              followMouse={!isMobile}
+              mouseInfluence={isMobile ? 0 : 0.08}
               maxDpr={perfSettings.maxDpr}
               targetFps={perfSettings.targetFps}
             />
           </motion.div>
         )}
 
-        {/* === DARK VEIL BACKGROUND (lazy mounted, fades in) === */}
-        {showDarkVeil && (
-          <motion.div 
+        {/* === GALAXY BACKGROUND === */}
+        {showGalaxy && (
+          <motion.div
             className="absolute inset-0 z-0"
-            style={{ opacity: darkVeilOpacity }}
+            style={{ opacity: galaxyOpacity }}
           >
-            <DarkVeil
-              hueShift={DARK_VEIL_HUE_SHIFT}
-              speed={0.3}
-              noiseIntensity={0.015}
-              scanlineIntensity={0}
-              scanlineFrequency={0}
-              warpAmount={0.2}
-              resolutionScale={isMobile ? 0.5 : 0.75}
+            <Galaxy
+              hueShift={GALAXY_CONFIG.hueShift}
+              density={GALAXY_CONFIG.density}
+              glowIntensity={GALAXY_CONFIG.glowIntensity}
+              saturation={GALAXY_CONFIG.saturation}
+              twinkleIntensity={GALAXY_CONFIG.twinkleIntensity}
+              rotationSpeed={GALAXY_CONFIG.rotationSpeed}
+              starSpeed={GALAXY_CONFIG.starSpeed}
+              speed={GALAXY_CONFIG.speed}
+              autoCenterRepulsion={GALAXY_CONFIG.autoCenterRepulsion}
+              mouseInteraction={!isMobile}
+              mouseRepulsion={!isMobile}
+              repulsionStrength={isMobile ? 0 : GALAXY_CONFIG.repulsionStrength}
+              transparent={true}
               maxDpr={perfSettings.maxDpr}
               targetFps={perfSettings.targetFps}
             />
           </motion.div>
         )}
-        
+
         {/* === GOOEY LAYER === */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
@@ -295,7 +300,6 @@ export function LiquidGlassHero() {
 
         {/* === CRISP LAYER === */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          
           <motion.div
             className="absolute rounded-full overflow-hidden"
             style={{
@@ -314,7 +318,8 @@ export function LiquidGlassHero() {
                 top: '10%',
                 left: '15%',
                 borderRadius: '999px',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)',
+                background:
+                  'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)',
                 filter: 'blur(8px)',
               }}
             />
@@ -403,7 +408,8 @@ function DatafluentText({
           className="absolute h-full"
           style={{
             width: '25%',
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%)',
+            background:
+              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%)',
             filter: 'blur(12px)',
           }}
           animate={{
@@ -517,12 +523,12 @@ function GooeyOrbEdge({
 
   const membraneOpacity = useTransform(
     scrollProgress,
-    [startAt, startAt + 0.06, settleAt - 0.02, settleAt + 0.06],
-    [0, 1, 1, 0]
+    [startAt, startAt + 0.04, startAt + 0.12, startAt + 0.18],
+    [0, 1, 0.3, 0]
   );
 
   const beadFractions = [0.0, 0.15, 0.32, 0.5, 0.68, 0.85];
-  
+
   const d0 = useTransform2(edge, pull, (e, p) => e * 0.8 + p * beadFractions[0]);
   const d1 = useTransform2(edge, pull, (e, p) => e * 0.88 + p * beadFractions[1]);
   const d2 = useTransform2(edge, pull, (e, p) => e * 0.95 + p * beadFractions[2]);
@@ -556,10 +562,21 @@ function GooeyOrbEdge({
   const b5X = useTransform2(b5x, floatX, (aa, bb) => aa + bb * 0.95);
   const b5Y = useTransform2(b5y, floatY, (aa, bb) => aa + bb * 0.95);
 
-  const neckThin = useTransform(pull, [0, maxDistance * 0.3, maxDistance * 0.7, maxDistance], [1, 0.7, 0.4, 0.15]);
-  
-  const baseSizes = [orbSize * 0.7, orbSize * 0.55, orbSize * 0.42, orbSize * 0.32, orbSize * 0.24, orbSize * 0.18];
-  
+  const neckThin = useTransform(
+    pull,
+    [0, maxDistance * 0.3, maxDistance * 0.7, maxDistance],
+    [1, 0.7, 0.4, 0.15]
+  );
+
+  const baseSizes = [
+    orbSize * 0.7,
+    orbSize * 0.55,
+    orbSize * 0.42,
+    orbSize * 0.32,
+    orbSize * 0.24,
+    orbSize * 0.18,
+  ];
+
   const bead0Size = useTransform(neckThin, (s) => baseSizes[0] * Math.max(0.5, s));
   const bead1Size = useTransform(neckThin, (s) => baseSizes[1] * Math.max(0.45, s));
   const bead2Size = useTransform(neckThin, (s) => baseSizes[2] * Math.max(0.4, s));
@@ -573,12 +590,78 @@ function GooeyOrbEdge({
       style={{ opacity }}
     >
       <motion.div style={{ opacity: membraneOpacity }}>
-        <motion.div className="absolute rounded-full" style={{ width: bead0Size, height: bead0Size, x: b0X, y: b0Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead1Size, height: bead1Size, x: b1X, y: b1Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead2Size, height: bead2Size, x: b2X, y: b2Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead3Size, height: bead3Size, x: b3X, y: b3Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead4Size, height: bead4Size, x: b4X, y: b4Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
-        <motion.div className="absolute rounded-full" style={{ width: bead5Size, height: bead5Size, x: b5X, y: b5Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: bead0Size,
+            height: bead0Size,
+            x: b0X,
+            y: b0Y,
+            translateX: '-50%',
+            translateY: '-50%',
+            background: 'rgba(110, 125, 155, 0.65)',
+          }}
+        />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: bead1Size,
+            height: bead1Size,
+            x: b1X,
+            y: b1Y,
+            translateX: '-50%',
+            translateY: '-50%',
+            background: 'rgba(110, 125, 155, 0.65)',
+          }}
+        />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: bead2Size,
+            height: bead2Size,
+            x: b2X,
+            y: b2Y,
+            translateX: '-50%',
+            translateY: '-50%',
+            background: 'rgba(110, 125, 155, 0.65)',
+          }}
+        />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: bead3Size,
+            height: bead3Size,
+            x: b3X,
+            y: b3Y,
+            translateX: '-50%',
+            translateY: '-50%',
+            background: 'rgba(110, 125, 155, 0.65)',
+          }}
+        />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: bead4Size,
+            height: bead4Size,
+            x: b4X,
+            y: b4Y,
+            translateX: '-50%',
+            translateY: '-50%',
+            background: 'rgba(110, 125, 155, 0.65)',
+          }}
+        />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: bead5Size,
+            height: bead5Size,
+            x: b5X,
+            y: b5Y,
+            translateX: '-50%',
+            translateY: '-50%',
+            background: 'rgba(110, 125, 155, 0.65)',
+          }}
+        />
       </motion.div>
 
       <motion.div
@@ -598,7 +681,7 @@ function GooeyOrbEdge({
 }
 
 // ============================================================================
-// FROSTED GLASS ORB
+// FROSTED GLASS ORB (with planetary effects + brand colors)
 // ============================================================================
 function FrostedGlassOrb({
   config,
@@ -624,7 +707,10 @@ function FrostedGlassOrb({
   const Logo = LOGO_COMPONENTS[config.id];
   const orbSize = isMobile ? 85 : 130;
   const innerOrbSize = orbSize - (isMobile ? 4 : 5);
-  const logoSize = isMobile ? 40 : 60;
+  const logoSize = isMobile ? 52 : 75;
+
+  // === HOVER STATE ===
+  const [isHovered, setIsHovered] = useState(false);
 
   const a = pillWidth / 2;
   const b = pillHeight / 2;
@@ -661,13 +747,19 @@ function FrostedGlassOrb({
   const y = useTransform2(baseY, floatY, (by, fy) => by + fy);
 
   const opacity = useTransform(scrollProgress, [startAt + 0.03, startAt + 0.12], [0, 1]);
-  
+
   const popScale = useTransform(
     scrollProgress,
     [startAt, startAt + 0.06, startAt + 0.12, settleAt],
     [0.2, 0.2, 1.08, 1]
   );
   const scale = useSpring(popScale, { stiffness: 250, damping: 16 });
+
+  // === PLANETARY ROTATION (always running, subtle) ===
+  const surfaceRotation = useTransform(time, (t) => (t / 80) % 360);
+
+  // === BRAND COLOR for tinting ===
+  const brandColor = config.color;
 
   return (
     <motion.div
@@ -680,65 +772,229 @@ function FrostedGlassOrb({
         translateX: '-50%',
         translateY: '-50%',
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* === AMBIENT GLOW (always visible, pulses) === */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        style={{
+          width: innerOrbSize + 60,
+          height: innerOrbSize + 60,
+          background: `radial-gradient(circle, ${brandColor}20 0%, ${brandColor}08 40%, transparent 70%)`,
+          filter: 'blur(20px)',
+        }}
+        animate={{
+          scale: [1, 1.15, 1],
+          opacity: [0.6, 0.9, 0.6],
+        }}
+        transition={{
+          duration: 3 + index * 0.5,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+
+      {/* === ATMOSPHERIC RING (visible on hover) === */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        style={{
+          width: innerOrbSize + 24,
+          height: innerOrbSize + 24,
+          border: `1.5px solid ${brandColor}`,
+          boxShadow: `
+            0 0 20px ${brandColor}50,
+            0 0 40px ${brandColor}25,
+            inset 0 0 15px ${brandColor}20
+          `,
+        }}
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{
+          opacity: isHovered ? 0.8 : 0,
+          scale: isHovered ? 1 : 0.85,
+        }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      />
+
+      {/* === ORBITING PARTICLES === */}
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute left-1/2 top-1/2 pointer-events-none"
+          style={{
+            width: innerOrbSize + 35 + i * 14,
+            height: innerOrbSize + 35 + i * 14,
+            marginLeft: -(innerOrbSize + 35 + i * 14) / 2,
+            marginTop: -(innerOrbSize + 35 + i * 14) / 2,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: isHovered ? 0.9 - i * 0.25 : 0,
+            rotate: 360,
+          }}
+          transition={{
+            opacity: { duration: 0.3 },
+            rotate: {
+              duration: 6 + i * 3,
+              repeat: Infinity,
+              ease: 'linear',
+            },
+          }}
+        >
+          <div
+            className="absolute rounded-full"
+            style={{
+              width: isMobile ? 4 : 5,
+              height: isMobile ? 4 : 5,
+              top: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: brandColor,
+              boxShadow: `0 0 8px ${brandColor}, 0 0 12px ${brandColor}80`,
+            }}
+          />
+        </motion.div>
+      ))}
+
+      {/* === MAIN ORB === */}
       <div
         className="relative flex items-center justify-center"
         style={{
           width: innerOrbSize,
           height: innerOrbSize,
           borderRadius: '50%',
-          background: `radial-gradient(circle at 30% 25%,
-            rgba(28, 32, 42, 0.92) 0%,
-            rgba(18, 22, 32, 0.95) 50%,
-            rgba(10, 14, 22, 0.98) 100%
-          )`,
-          boxShadow: `
-            inset 0 6px 20px rgba(255,255,255,0.08),
-            inset 0 -8px 22px rgba(0,0,0,0.4),
-            0 8px 30px rgba(0,0,0,0.5)
+          background: `
+            radial-gradient(circle at 30% 25%,
+              rgba(28, 32, 42, 0.55) 0%,
+              rgba(18, 22, 32, 0.60) 50%,
+              rgba(10, 14, 22, 0.65) 100%
+            ),
+            radial-gradient(circle at 50% 50%,
+              ${brandColor}12 0%,
+              ${brandColor}06 50%,
+              transparent 70%
+            )
           `,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          boxShadow: `
+            inset 0 0 40px rgba(255,255,255,0.05),
+            inset 0 0 60px ${brandColor}08,
+            0 8px 32px rgba(0,0,0,0.5),
+            0 0 0 1px rgba(255,255,255,0.08),
+            0 0 30px ${brandColor}15
+          `,
+          backdropFilter: 'blur(16px) saturate(1.3)',
+          WebkitBackdropFilter: 'blur(16px) saturate(1.3)',
           overflow: 'hidden',
+          cursor: 'pointer',
         }}
       >
-        <div
-          className="absolute"
+        {/* === PLANETARY SURFACE SHIMMER (slow rotation) === */}
+        <motion.div
+          className="absolute inset-0 rounded-full pointer-events-none"
           style={{
-            width: '80%',
-            height: '4px',
-            top: '8%',
-            left: '10%',
-            borderRadius: '999px',
-            background: 'linear-gradient(90deg, rgba(255,120,120,0.12) 0%, rgba(255,255,255,0.15) 50%, rgba(120,160,255,0.12) 100%)',
-            filter: 'blur(2px)',
-          }}
-        />
-        <div
-          className="absolute"
-          style={{
-            width: '50%',
-            height: '25%',
-            top: '12%',
-            left: '20%',
-            borderRadius: '999px',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)',
-            filter: 'blur(6px)',
-          }}
-        />
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: '10%',
-            height: '10%',
-            top: '18%',
-            left: '26%',
-            background: 'rgba(255,255,255,0.25)',
-            filter: 'blur(2px)',
+            background: `conic-gradient(
+              from 0deg,
+              transparent 0%,
+              ${brandColor}08 10%,
+              transparent 20%,
+              ${brandColor}04 50%,
+              transparent 60%,
+              ${brandColor}10 80%,
+              transparent 100%
+            )`,
+            rotate: surfaceRotation,
           }}
         />
 
-        <div className="relative z-10" style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' }}>
+        {/* === TERMINATOR LINE (day/night boundary) === */}
+        <motion.div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            background: `linear-gradient(
+              105deg,
+              transparent 0%,
+              transparent 42%,
+              rgba(0,0,0,0.12) 48%,
+              rgba(0,0,0,0.22) 55%,
+              rgba(0,0,0,0.32) 100%
+            )`,
+          }}
+          animate={{
+            opacity: isHovered ? 1 : 0.5,
+          }}
+          transition={{ duration: 0.4 }}
+        />
+
+        {/* === BRAND COLOR EDGE GLOW === */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            background: `conic-gradient(
+              from 0deg,
+              ${brandColor}18,
+              transparent 25%,
+              ${brandColor}12,
+              transparent 50%,
+              ${brandColor}18,
+              transparent 75%,
+              ${brandColor}12,
+              transparent 100%
+            )`,
+            mask: 'radial-gradient(circle, transparent 65%, black 80%, transparent 100%)',
+            WebkitMask: 'radial-gradient(circle, transparent 65%, black 80%, transparent 100%)',
+            opacity: 0.7,
+          }}
+        />
+
+        {/* Soft inner glow with brand color */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '60%',
+            height: '60%',
+            top: '20%',
+            left: '20%',
+            background: `radial-gradient(circle at 40% 35%, 
+              rgba(255,255,255,0.06) 0%, 
+              ${brandColor}08 30%,
+              transparent 60%
+            )`,
+            filter: 'blur(10px)',
+          }}
+        />
+
+        {/* Small specular highlight */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '12%',
+            height: '12%',
+            top: '22%',
+            left: '28%',
+            background: 'rgba(255,255,255,0.35)',
+            filter: 'blur(3px)',
+          }}
+        />
+
+        {/* === HOVER GLOW INTENSIFY === */}
+        <motion.div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at 30% 30%, ${brandColor}30 0%, transparent 60%)`,
+          }}
+          animate={{
+            opacity: isHovered ? 1 : 0,
+          }}
+          transition={{ duration: 0.3 }}
+        />
+
+        {/* Logo */}
+        <div
+          className="relative z-10"
+          style={{
+            filter: `drop-shadow(0 2px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 12px ${brandColor}30)`,
+          }}
+        >
           <Logo size={logoSize} />
         </div>
       </div>

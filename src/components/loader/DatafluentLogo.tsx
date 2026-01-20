@@ -1,6 +1,7 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useRef } from 'react';
+import LiquidGlass from 'liquid-glass-react';
 import { FINAL_GRADIENT } from '@/lib/brandColors';
 
 interface Props {
@@ -22,6 +23,8 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
     { letterColors, showFinalGradient, gradientProgress, visible, settled },
     ref
   ) {
+    const containerRef = useRef<HTMLDivElement>(null);
+
     return (
       <div
         ref={ref}
@@ -49,7 +52,36 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
         />
 
         {/* ================================================================
-            MAIN TEXT
+            LIQUID GLASS BACKGROUND PANEL - Positioned behind text
+        ================================================================ */}
+        <div
+          ref={containerRef}
+          className="absolute inset-0 -inset-x-8 -inset-y-4 pointer-events-auto"
+          style={{ zIndex: 0 }}
+        >
+          <LiquidGlass
+            mouseContainer={containerRef}
+            displacementScale={40}
+            blurAmount={0.04}
+            saturation={150}
+            aberrationIntensity={1.5}
+            elasticity={0.2}
+            cornerRadius={24}
+            overLight={false}
+            style={{
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              inset: 0,
+            }}
+          >
+            {/* Empty - just the glass effect */}
+            <div style={{ width: '100%', height: '100%' }} />
+          </LiquidGlass>
+        </div>
+
+        {/* ================================================================
+            MAIN TEXT - On top of glass
         ================================================================ */}
         <h1
           className="relative text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold tracking-tight select-none flex items-start leading-none"
@@ -58,6 +90,7 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
             WebkitFontSmoothing: 'antialiased',
             fontFamily:
               '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            zIndex: 1,
           }}
         >
           {/* ================================================================
@@ -196,6 +229,7 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
                 rgba(255,255,255,0.2) 70%,
                 transparent 100%
               )`,
+              zIndex: 2,
             }}
           />
         )}
