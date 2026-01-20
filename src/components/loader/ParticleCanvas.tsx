@@ -40,6 +40,11 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     const dimensionsRef = useRef({ width: 0, height: 0 });
 
     // ========================================================================
+    // REF TO HOLD ANIMATE FUNCTION (fixes self-reference issue)
+    // ========================================================================
+    const animateFnRef = useRef<() => void>(() => {});
+
+    // ========================================================================
     // IMPERATIVE HANDLE
     // ========================================================================
     useImperativeHandle(
@@ -241,7 +246,8 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       const { width, height } = dimensionsRef.current;
 
       if (!ctx || !width || !height) {
-        animationRef.current = requestAnimationFrame(animate);
+        // Use ref to schedule next frame (avoids self-reference issue)
+        animationRef.current = requestAnimationFrame(() => animateFnRef.current());
         return;
       }
 
@@ -408,8 +414,16 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         particlesRef.current.splice(dead[i], 1);
       }
 
-      animationRef.current = requestAnimationFrame(animate);
+      // Schedule next frame via ref (avoids self-reference issue)
+      animationRef.current = requestAnimationFrame(() => animateFnRef.current());
     }, [onLetterPainted]);
+
+    // ========================================================================
+    // KEEP animateFnRef IN SYNC
+    // ========================================================================
+    useEffect(() => {
+      animateFnRef.current = animate;
+    }, [animate]);
 
     // ========================================================================
     // SETUP AND CLEANUP
@@ -417,9 +431,12 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     useEffect(() => {
       isMountedRef.current = true;
 
+      // Capture current ref values for cleanup (fixes exhaustive-deps warning)
+      const currentPaintedLetters = paintedLettersRef.current;
+
       handleResize();
       window.addEventListener('resize', handleResize);
-      animationRef.current = requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(() => animateFnRef.current());
 
       return () => {
         isMountedRef.current = false;
@@ -431,9 +448,9 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         }
 
         particlesRef.current = [];
-        paintedLettersRef.current.clear();
+        currentPaintedLetters.clear();
       };
-    }, [handleResize, animate]);
+    }, [handleResize]);
 
     // ========================================================================
     // RENDER

@@ -64,8 +64,8 @@ const LOGO_ORBITS: Record<LogoDirection, LogoOrbit> = {
   'bottom-right': { vx: 0.85, vy: 0.85, origin: 'bottom right' },
 };
 
-// Fixed “box” for logos so we can compute safe spacing deterministically.
-// (The actual SVG can be smaller; that’s fine—keeps it safely away.)
+// Fixed "box" for logos so we can compute safe spacing deterministically.
+// (The actual SVG can be smaller; that's fine—keeps it safely away.)
 const LOGO_BOX_SIZE = 200;
 
 function clampNum(n: number, min: number, max: number): number {
@@ -559,16 +559,15 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
   }, []);
 
   // ============================================================================
-  // RENDER HELPERS
+  // DERIVED VALUES (computed from state, used in render)
+  // These must be computed BEFORE the early return to satisfy Rules of Hooks
   // ============================================================================
-  if (isComplete) return null;
-
   const LogoComponent = currentCompany ? LOGO_COMPONENTS[currentCompany] : null;
   const logoColors = currentCompany ? BRAND_COLORS[currentCompany] : [];
   const currentConfig = currentCompany ? LOGO_CONFIGS.find((c) => c.name === currentCompany) : null;
-
   const orbit = currentConfig ? LOGO_ORBITS[currentConfig.entranceDirection] : LOGO_ORBITS.top;
 
+  // Logo pixel position - MUST be called before early return (Rules of Hooks)
   const logoPixelPos = useMemo(() => {
     const vw = viewport.w || 0;
     const vh = viewport.h || 0;
@@ -608,6 +607,14 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     };
   }, [viewport.w, viewport.h, textBounds, orbit.vx, orbit.vy]);
 
+  // ============================================================================
+  // EARLY RETURN - After all hooks
+  // ============================================================================
+  if (isComplete) return null;
+
+  // ============================================================================
+  // RENDER HELPERS (functions that use hook-derived values)
+  // ============================================================================
   const getLogoStyle = (): React.CSSProperties => {
     const base: React.CSSProperties = {
       position: 'fixed',

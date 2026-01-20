@@ -3,35 +3,35 @@
 import { useState, useEffect } from 'react';
 
 /**
+ * Returns initial reduced-motion preference (SSR-safe)
+ */
+function getInitialMotionPreference(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
  * Hook to detect if user prefers reduced motion
  * Respects prefers-reduced-motion media query
  */
 export function useReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // Lazy initializer—runs once, no effect-based setState needed
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    getInitialMotionPreference
+  );
 
   useEffect(() => {
-    // Check if window is available (SSR safety)
     if (typeof window === 'undefined') return;
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    // Set initial value
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    // Listen for changes
+    // Only setState in callback—compliant with react-hooks/set-state-in-effect
     const handleChange = (event: MediaQueryListEvent) => {
       setPrefersReducedMotion(event.matches);
     };
 
-    // Modern browsers
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-
-    // Fallback for older browsers
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   return prefersReducedMotion;
