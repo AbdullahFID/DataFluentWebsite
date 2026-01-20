@@ -38,15 +38,8 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     const isMountedRef = useRef(true);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const dimensionsRef = useRef({ width: 0, height: 0 });
-
-    // ========================================================================
-    // REF TO HOLD ANIMATE FUNCTION (fixes self-reference issue)
-    // ========================================================================
     const animateFnRef = useRef<() => void>(() => {});
 
-    // ========================================================================
-    // IMPERATIVE HANDLE
-    // ========================================================================
     useImperativeHandle(
       ref,
       () => ({
@@ -126,15 +119,15 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         },
 
         // ====================================================================
-        // TORNADO/CONE DUST SWEEP - UP-RIGHT, left particles swoosh harder
+        // FAST DUST SWOOSH - Race car style, UP-RIGHT, no flipping
         // ====================================================================
         explodeText: (letterRects, colors) => {
           if (!isMountedRef.current) return;
 
           const isMobile = window.innerWidth < 768;
-          const particlesPerLetter = isMobile ? 60 : 120;
+          // Fewer particles but FAST
+          const particlesPerLetter = isMobile ? 40 : 80;
 
-          // Calculate total width to determine each letter's position ratio
           const validRects = letterRects.filter(r => r && r.width > 0);
           if (validRects.length === 0) return;
 
@@ -147,41 +140,35 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
             
             const color = colors[i % colors.length] || '#FFFFFF';
             
-            // ============================================================
-            // CONE/TORNADO GEOMETRY
-            // ============================================================
-            // positionRatio: 0 = leftmost letter, 1 = rightmost letter
             const letterCenter = rect.left + rect.width / 2;
             const positionRatio = (letterCenter - leftMost) / totalWidth;
             
-            // LEFT letters = wide spread, HIGH speed (the "source" of tornado)
-            // RIGHT letters = narrow spread, lower speed (the "tail")
-            const spreadMultiplier = 1 - positionRatio * 0.7; // 1.0 → 0.3
-            const speedMultiplier = 1.8 + (1 - positionRatio) * 1.5; // Right: 1.8, Left: 3.3
+            // LEFT = faster & wider spread, RIGHT = tighter
+            const spreadMultiplier = 1 - positionRatio * 0.6;
             
-            // Base angle: UP-RIGHT (-π/4 = 45° up-right)
+            // Fast but readable swoosh
+            const speedMultiplier = 3 + (1 - positionRatio) * 3; // 3x to 6x speed
+            
+            // Base angle: UP-RIGHT (-π/4 = 45° diagonal)
             const baseAngle = -Math.PI / 4;
             
-            // Spread angle: wider on left, tighter on right (cone shape)
-            const maxSpread = 0.9; // ~52° spread on left
-            const minSpread = 0.25; // ~14° spread on right
+            // Cone spread
+            const maxSpread = 0.7;
+            const minSpread = 0.2;
             const spreadAngle = maxSpread - positionRatio * (maxSpread - minSpread);
 
             for (let j = 0; j < particlesPerLetter; j++) {
-              // Spawn across the letter area
               const spawnX = rect.left + Math.random() * rect.width;
               const spawnY = rect.top + Math.random() * rect.height;
               
-              // Cone spread: random angle within the spread range
               const angleOffset = (Math.random() - 0.5) * spreadAngle * 2;
               const finalAngle = baseAngle + angleOffset;
               
-              // Speed varies: left particles are FASTER
-              const baseSpeed = 1.2 + Math.random() * 1.8;
+              // HIGH speed base (slightly reduced)
+              const baseSpeed = 2.5 + Math.random() * 3;
               const speed = baseSpeed * speedMultiplier * spreadMultiplier;
               
-              // Particle size: slightly larger on left (more prominent)
-              const sizeMultiplier = 0.7 + spreadMultiplier * 0.6;
+              const sizeMultiplier = 0.6 + spreadMultiplier * 0.5;
               
               particlesRef.current.push({
                 id: Date.now() + Math.random(),
@@ -189,22 +176,22 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
                 y: spawnY,
                 startX: spawnX,
                 startY: spawnY,
-                targetX: spawnX + Math.cos(finalAngle) * 600,
-                targetY: spawnY + Math.sin(finalAngle) * 600,
+                targetX: spawnX + Math.cos(finalAngle) * 800,
+                targetY: spawnY + Math.sin(finalAngle) * 800,
                 controlX: spawnX + 100,
                 controlY: spawnY - 100,
                 color,
-                size: (0.6 + Math.random() * 1.8) * sizeMultiplier,
-                alpha: 0.95,
+                size: (0.5 + Math.random() * 1.5) * sizeMultiplier,
+                alpha: 0.9,
                 progress: 0,
-                // Stagger: LEFT letters first (wave sweeping right-to-left visually)
-                delay: i * 0.018 + Math.random() * 0.012,
-                speed: 0.012 + Math.random() * 0.008,
+                // Minimal stagger - all at once for swoosh effect
+                delay: i * 0.008 + Math.random() * 0.005,
+                speed: 0.02 + Math.random() * 0.01,
                 phase: 'burst',
                 burstVx: Math.cos(finalAngle) * speed,
                 burstVy: Math.sin(finalAngle) * speed,
                 burstProgress: 0,
-                rotation: Math.random() * Math.PI * 2,
+                rotation: 0, // NO rotation - prevents flipping look
                 letterIndex: -1,
                 hasPainted: true,
               });
@@ -226,9 +213,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       []
     );
 
-    // ========================================================================
-    // RESIZE HANDLER
-    // ========================================================================
     const handleResize = useCallback(() => {
       const canvas = canvasRef.current;
       if (!canvas || !isMountedRef.current) return;
@@ -250,9 +234,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       dimensionsRef.current = { width, height };
     }, []);
 
-    // ========================================================================
-    // ANIMATION LOOP - Tornado/cone physics for UP-RIGHT sweep
-    // ========================================================================
     const animate = useCallback(() => {
       if (!isMountedRef.current) return;
 
@@ -278,48 +259,38 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         if (p.phase === 'burst') {
           if (isTextExplosion) {
             // ================================================================
-            // TORNADO UP-RIGHT PHYSICS
+            // FAST SWOOSH PHYSICS - No rotation, pure velocity
             // ================================================================
             p.x += p.burstVx;
             p.y += p.burstVy;
             
-            // Drag: maintain diagonal momentum
-            p.burstVx *= 0.988;
-            p.burstVy *= 0.988;
+            // Light drag - maintains speed longer
+            p.burstVx *= 0.96;
+            p.burstVy *= 0.96;
             
-            // Slight upward lift (tornado updraft)
-            p.burstVy -= 0.008;
+            // Subtle upward + rightward drift
+            p.burstVy -= 0.05;
+            p.burstVx += 0.03;
             
-            // Subtle rightward drift
-            p.burstVx += 0.01;
+            p.burstProgress += 0.03; // Slightly slower progress
             
-            // Turbulence - swirling motion
-            const swirl = Math.sin(p.burstProgress * 8 + p.rotation) * 0.03;
-            p.burstVx += swirl;
-            p.burstVy += (Math.random() - 0.5) * 0.025;
-            
-            p.burstProgress += 0.014;
-            p.rotation += 0.025;
-            
-            // Fade out
-            if (p.burstProgress > 0.2) {
-              p.alpha *= 0.985;
+            // Quick fade - swoosh disappears fast
+            if (p.burstProgress > 0.15) {
+              p.alpha *= 0.94;
             }
             
-            // Shrink as it fades
-            if (p.burstProgress > 0.35) {
-              p.size *= 0.994;
+            // Shrink quickly
+            if (p.burstProgress > 0.2) {
+              p.size *= 0.95;
             }
             
             // Remove when faded or off-screen
-            if (p.alpha < 0.02 || p.x > window.innerWidth + 100 || p.y < -100) {
+            if (p.alpha < 0.03 || p.x > window.innerWidth + 50 || p.y < -50) {
               dead.push(idx);
               return;
             }
           } else {
-            // ================================================================
-            // ORIGINAL BURST for logo explosion (unchanged)
-            // ================================================================
+            // ORIGINAL BURST for logo explosion
             p.x += p.burstVx;
             p.y += p.burstVy;
             p.burstVx *= 0.91;
@@ -386,27 +357,25 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         ctx.save();
         
         if (isTextExplosion) {
-          // Soft dust particles with trail effect
+          // Simple circular dust particle - no rotation transform
           const gradient = ctx.createRadialGradient(
             p.x, p.y, 0,
-            p.x, p.y, p.size * 3.5
+            p.x, p.y, p.size * 2.5
           );
           gradient.addColorStop(0, p.color);
-          gradient.addColorStop(0.25, `${p.color}bb`);
-          gradient.addColorStop(0.5, `${p.color}55`);
+          gradient.addColorStop(0.4, `${p.color}88`);
           gradient.addColorStop(1, 'transparent');
           
           ctx.globalAlpha = p.alpha;
           ctx.fillStyle = gradient;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 3.5, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
           ctx.fill();
         } else {
           // Original rendering for logo particles
           ctx.translate(p.x, p.y);
           ctx.rotate(p.rotation);
 
-          // Glow
           ctx.globalAlpha = p.alpha * 0.5;
           const glowSize = p.size * 3.5;
           const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
@@ -417,7 +386,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
           ctx.fill();
 
-          // Core particle
           ctx.globalAlpha = p.alpha;
           ctx.fillStyle = p.color;
           ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
@@ -426,7 +394,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         ctx.restore();
       });
 
-      // Remove dead particles
       for (let i = dead.length - 1; i >= 0; i--) {
         particlesRef.current.splice(dead[i], 1);
       }
@@ -434,19 +401,12 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       animationRef.current = requestAnimationFrame(() => animateFnRef.current());
     }, [onLetterPainted]);
 
-    // ========================================================================
-    // KEEP animateFnRef IN SYNC
-    // ========================================================================
     useEffect(() => {
       animateFnRef.current = animate;
     }, [animate]);
 
-    // ========================================================================
-    // SETUP AND CLEANUP
-    // ========================================================================
     useEffect(() => {
       isMountedRef.current = true;
-
       const currentPaintedLetters = paintedLettersRef.current;
 
       handleResize();
@@ -467,9 +427,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       };
     }, [handleResize]);
 
-    // ========================================================================
-    // RENDER
-    // ========================================================================
     return (
       <canvas
         ref={canvasRef}

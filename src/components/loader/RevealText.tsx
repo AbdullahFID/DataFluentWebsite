@@ -1,4 +1,4 @@
-// RevealText.tsx - Slide-in from bottom-left (opposite of dust direction)
+// RevealText.tsx - BIG BOLD text, fast reveal
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -20,38 +20,36 @@ const FAANG_COLORS = {
   amazon: ['#FF9900', '#FF9900'],
 };
 
-// Map each character to a FAANG color
 function getCharColor(index: number, char: string): string {
   if (char === ' ') return 'transparent';
   
   const colorSequence = [
-    FAANG_COLORS.google[0],    // N - Google Blue
-    FAANG_COLORS.google[1],    // o - Google Red
-    FAANG_COLORS.google[2],    // w - Google Yellow
+    FAANG_COLORS.google[0],    // N
+    FAANG_COLORS.google[1],    // o
+    FAANG_COLORS.google[2],    // w
     null,                       // space
-    FAANG_COLORS.google[3],    // w - Google Green
-    FAANG_COLORS.apple[0],     // o - Apple Silver
-    FAANG_COLORS.apple[1],     // r - Apple Silver
-    FAANG_COLORS.meta[0],      // k - Meta Blue
-    FAANG_COLORS.meta[1],      // i - Meta Light Blue
-    FAANG_COLORS.microsoft[0], // n - Microsoft Red
-    FAANG_COLORS.microsoft[1], // g - Microsoft Green
+    FAANG_COLORS.google[3],    // w
+    FAANG_COLORS.apple[0],     // o
+    FAANG_COLORS.apple[1],     // r
+    FAANG_COLORS.meta[0],      // k
+    FAANG_COLORS.meta[1],      // i
+    FAANG_COLORS.microsoft[0], // n
+    FAANG_COLORS.microsoft[1], // g
     null,                       // space
-    FAANG_COLORS.microsoft[2], // f - Microsoft Blue
-    FAANG_COLORS.microsoft[3], // o - Microsoft Yellow
-    FAANG_COLORS.amazon[0],    // r - Amazon Orange
+    FAANG_COLORS.microsoft[2], // f
+    FAANG_COLORS.microsoft[3], // o
+    FAANG_COLORS.amazon[0],    // r
     null,                       // space
-    FAANG_COLORS.amazon[0],    // y - Amazon Orange
-    FAANG_COLORS.google[0],    // o - Google Blue
-    FAANG_COLORS.google[1],    // u - Google Red
+    FAANG_COLORS.amazon[0],    // y
+    FAANG_COLORS.google[0],    // o
+    FAANG_COLORS.google[1],    // u
   ];
   
   return colorSequence[index] || '#FFFFFF';
 }
 
 /**
- * Text reveal that slides in from BOTTOM-LEFT
- * (Opposite direction of dust sweep = creates "whoosh through" effect)
+ * BIG BOLD text reveal - fast and punchy
  */
 export function RevealText({ 
   text, 
@@ -65,15 +63,15 @@ export function RevealText({
 
   useEffect(() => {
     if (trigger) {
-      // Start reveal quickly after dust clears
+      // Start immediately
       const timer = setTimeout(() => {
         setShouldAnimate(true);
-      }, 100);
+      }, 50);
       
-      // Complete after all letters + settle time
+      // Complete callback
       const completeTimer = setTimeout(() => {
         onComplete?.();
-      }, 100 + chars.length * 50 + 400);
+      }, 50 + chars.length * 30 + 300);
       
       return () => {
         clearTimeout(timer);
@@ -98,8 +96,8 @@ export function RevealText({
           const isSpace = ch === ' ';
           const color = getCharColor(i, ch);
           
-          // Stagger: ~50ms per letter (snappy)
-          const delay = shouldAnimate ? i * 0.05 : 0;
+          // FAST stagger - 30ms per letter
+          const delay = shouldAnimate ? i * 0.03 : 0;
 
           return (
             <motion.span
@@ -107,50 +105,48 @@ export function RevealText({
               className="relative inline-block"
               initial={{ 
                 opacity: 0,
-                x: -30,           // Start from LEFT
-                y: 20,            // Start from BELOW
-                filter: 'blur(8px)',
-                scale: 0.85,
+                x: -40,
+                y: 30,
+                scale: 0.8,
               }}
               animate={shouldAnimate ? {
                 opacity: 1,
                 x: 0,
                 y: 0,
-                filter: 'blur(0px)',
                 scale: 1,
               } : {
                 opacity: 0,
-                x: -30,
-                y: 20,
-                filter: 'blur(8px)',
-                scale: 0.85,
+                x: -40,
+                y: 30,
+                scale: 0.8,
               }}
               transition={{
-                duration: 0.5,
+                duration: 0.35,
                 delay,
-                ease: [0.16, 1, 0.3, 1], // Expo out - fast start, smooth end
+                ease: [0.16, 1, 0.3, 1], // Expo out - FAST
                 x: {
-                  duration: 0.6,
+                  duration: 0.4,
                   delay,
                   ease: [0.22, 1, 0.36, 1],
                 },
                 y: {
-                  duration: 0.55,
+                  duration: 0.35,
                   delay,
-                  ease: [0.34, 1.02, 0.68, 1], // Tiny overshoot
+                  ease: [0.22, 1, 0.36, 1],
                 },
-                filter: {
-                  duration: 0.4,
-                  delay: delay + 0.05,
+                scale: {
+                  duration: 0.3,
+                  delay,
+                  ease: [0.34, 1.56, 0.64, 1], // Overshoot for punch
                 },
               }}
               style={{
-                marginRight: isSpace ? '0.28em' : '0.015em',
+                marginRight: isSpace ? '0.25em' : '0.01em',
                 color: color,
                 textShadow: shouldAnimate && !isSpace
-                  ? `0 0 20px ${color}66, 0 0 40px ${color}33, 0 0 60px ${color}22`
+                  ? `0 0 30px ${color}88, 0 0 60px ${color}44, 0 0 90px ${color}22`
                   : 'none',
-                willChange: 'transform, opacity, filter',
+                willChange: 'transform, opacity',
               }}
             >
               {isSpace ? '\u00A0' : ch}
@@ -159,34 +155,7 @@ export function RevealText({
         })}
       </div>
 
-      {/* Subtle color-matched underline - sweeps in from left */}
-      <motion.div
-        className="absolute left-1/2 pointer-events-none"
-        initial={{ opacity: 0, scaleX: 0, x: '-80%' }}
-        animate={shouldAnimate ? { opacity: 0.6, scaleX: 1, x: '-50%' } : { opacity: 0, scaleX: 0, x: '-80%' }}
-        transition={{ 
-          duration: 0.8, 
-          delay: chars.length * 0.05 + 0.2,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        style={{
-          bottom: '-6px',
-          transformOrigin: 'left center',
-          width: '90%',
-          height: '1px',
-          background: `linear-gradient(90deg, 
-            transparent 0%, 
-            ${FAANG_COLORS.google[0]}88 15%, 
-            ${FAANG_COLORS.meta[0]}88 35%, 
-            ${FAANG_COLORS.microsoft[2]}88 55%, 
-            ${FAANG_COLORS.amazon[0]}88 75%, 
-            transparent 100%
-          )`,
-          filter: 'blur(4px)',
-          borderRadius: '999px',
-          zIndex: 5,
-        }}
-      />
+
     </div>
   );
 }

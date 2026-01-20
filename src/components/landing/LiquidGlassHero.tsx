@@ -134,18 +134,14 @@ export function LiquidGlassHero() {
 
   const maxDistance = isMobile ? 130 : 220;
 
-  const pillOpacity = useTransform(scrollYProgress, [0, 0.04, 0.12, 0.5], [0, 0, 0.95, 0.75]);
-  const pillScale = useTransform(scrollYProgress, [0, 0.12, 0.4], [0.96, 1, 0.92]);
-
-  // Edge/border color for gooey effect - more visible
-  const edgeColor = 'rgba(140, 150, 175, 0.7)';
-  const edgeThickness = isMobile ? 4 : 6;
+  const pillOpacity = useTransform(scrollYProgress, [0, 0.06, 0.2, 0.7, 0.9], [0, 0, 0.95, 0.5, 0]);
+  const pillScale = useTransform(scrollYProgress, [0, 0.2, 0.8], [0.96, 1, 0.92]);
 
   return (
     <section
       ref={sectionRef}
       className="relative bg-[#050508]"
-      style={{ height: '350vh' }}
+      style={{ height: '180vh' }}
     >
       <GooeyFilter id="goo" />
 
@@ -182,8 +178,6 @@ export function LiquidGlassHero() {
               pillScale={pillScale}
               time={time}
               isMobile={isMobile}
-              edgeColor={edgeColor}
-              edgeThickness={edgeThickness}
             />
           ))}
         </div>
@@ -285,24 +279,85 @@ function DatafluentText({
   ];
 
   return (
-    <h1
-      ref={textRef}
-      className={`font-black tracking-tight flex ${
-        isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
-      }`}
-    >
-      {letters.map((letter, i) => (
-        <span
-          key={i}
-          style={{
-            color: letterColors[i],
-            textShadow: `0 0 25px ${letterColors[i]}50, 0 0 50px ${letterColors[i]}20`,
-          }}
+    <div className="relative">
+      {/* Ambient glow layer */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          filter: 'blur(20px)',
+          opacity: 0.4,
+        }}
+      >
+        <div
+          className={`font-black tracking-tight flex ${
+            isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
+          }`}
         >
-          {letter}
-        </span>
-      ))}
-    </h1>
+          {letters.map((letter, i) => (
+            <span key={i} style={{ color: letterColors[i] }}>
+              {letter}
+            </span>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Shimmer sweep effect - subtle */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none overflow-hidden"
+        style={{ mixBlendMode: 'overlay' }}
+      >
+        <motion.div
+          className="absolute h-full"
+          style={{
+            width: '25%',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%)',
+            filter: 'blur(12px)',
+          }}
+          animate={{
+            x: ['-100%', '500%'],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            repeatDelay: 4,
+            ease: 'easeInOut',
+          }}
+        />
+      </motion.div>
+
+      {/* Main text */}
+      <h1
+        ref={textRef}
+        className={`relative font-black tracking-tight flex ${
+          isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
+        }`}
+      >
+        {letters.map((letter, i) => (
+          <motion.span
+            key={i}
+            style={{
+              color: letterColors[i],
+              textShadow: `0 0 25px ${letterColors[i]}50, 0 0 50px ${letterColors[i]}20`,
+            }}
+            animate={{
+              textShadow: [
+                `0 0 25px ${letterColors[i]}50, 0 0 50px ${letterColors[i]}20`,
+                `0 0 30px ${letterColors[i]}60, 0 0 60px ${letterColors[i]}28`,
+                `0 0 25px ${letterColors[i]}50, 0 0 50px ${letterColors[i]}20`,
+              ],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              delay: i * 0.2,
+              ease: 'easeInOut',
+            }}
+          >
+            {letter}
+          </motion.span>
+        ))}
+      </h1>
+    </div>
   );
 }
 
@@ -329,8 +384,6 @@ function GooeyOrbEdge({
   pillScale: MotionValue<number>;
   time: MotionValue<number>;
   isMobile: boolean;
-  edgeColor: string;
-  edgeThickness: number;
 }) {
   const orbSize = isMobile ? 85 : 130;
 
@@ -339,12 +392,12 @@ function GooeyOrbEdge({
   const baseEdge = ellipseRadiusAtAngle(a, b, config.angle);
   const edge = useTransform(pillScale, (s) => baseEdge * (s as number));
 
-  // Faster timing
-  const staggerDelay = index * 0.035;
-  const startAt = 0.10 + staggerDelay;
-  const peakAt = startAt + 0.08;
-  const bounceAt = peakAt + 0.03;
-  const settleAt = startAt + 0.18;
+  // Timing adjusted for 180vh scroll
+  const staggerDelay = index * 0.06;
+  const startAt = 0.15 + staggerDelay;
+  const peakAt = startAt + 0.12;
+  const bounceAt = peakAt + 0.05;
+  const settleAt = startAt + 0.28;
 
   const rawPull = useTransform(
     scrollProgress,
@@ -369,12 +422,12 @@ function GooeyOrbEdge({
   const x = useTransform2(baseX, floatX, (bx, fx) => bx + fx);
   const y = useTransform2(baseY, floatY, (by, fy) => by + fy);
 
-  const opacity = useTransform(scrollProgress, [startAt - 0.01, startAt + 0.04], [0, 0.95]);
+  const opacity = useTransform(scrollProgress, [startAt - 0.02, startAt + 0.06], [0, 0.95]);
 
-  // Membrane fades out faster after settle
+  // Membrane fades out after settle
   const membraneOpacity = useTransform(
     scrollProgress,
-    [startAt, startAt + 0.04, settleAt - 0.01, settleAt + 0.04],
+    [startAt, startAt + 0.06, settleAt - 0.02, settleAt + 0.06],
     [0, 1, 1, 0]
   );
 
@@ -492,12 +545,12 @@ function FrostedGlassOrb({
   const baseEdge = ellipseRadiusAtAngle(a, b, config.angle);
   const edge = useTransform(pillScale, (s) => baseEdge * (s as number));
 
-  // Faster timing to match gooey layer
-  const staggerDelay = index * 0.035;
-  const startAt = 0.10 + staggerDelay;
-  const peakAt = startAt + 0.08;
-  const bounceAt = peakAt + 0.03;
-  const settleAt = startAt + 0.18;
+  // Timing adjusted for 180vh scroll - match gooey layer
+  const staggerDelay = index * 0.06;
+  const startAt = 0.15 + staggerDelay;
+  const peakAt = startAt + 0.12;
+  const bounceAt = peakAt + 0.05;
+  const settleAt = startAt + 0.28;
 
   const rawPull = useTransform(
     scrollProgress,
@@ -522,11 +575,11 @@ function FrostedGlassOrb({
   const x = useTransform2(baseX, floatX, (bx, fx) => bx + fx);
   const y = useTransform2(baseY, floatY, (by, fy) => by + fy);
 
-  const opacity = useTransform(scrollProgress, [startAt + 0.02, startAt + 0.08], [0, 1]);
+  const opacity = useTransform(scrollProgress, [startAt + 0.03, startAt + 0.12], [0, 1]);
   
   const popScale = useTransform(
     scrollProgress,
-    [startAt, startAt + 0.04, startAt + 0.08, settleAt],
+    [startAt, startAt + 0.06, startAt + 0.12, settleAt],
     [0.2, 0.2, 1.08, 1]
   );
   const scale = useSpring(popScale, { stiffness: 250, damping: 16 });
@@ -617,7 +670,7 @@ function FrostedGlassOrb({
 // SCROLL INDICATOR
 // ============================================================================
 function ScrollIndicator({ scrollProgress }: { scrollProgress: MotionValue<number> }) {
-  const opacity = useTransform(scrollProgress, [0, 0.06], [1, 0]);
+  const opacity = useTransform(scrollProgress, [0, 0.1], [1, 0]);
 
   return (
     <motion.div
