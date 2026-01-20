@@ -126,46 +126,62 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         },
 
         // ====================================================================
-        // REFINED explodeText - Apple-style vaporization/dissolution
+        // TORNADO/CONE DUST SWEEP - UP-RIGHT, left particles swoosh harder
         // ====================================================================
         explodeText: (letterRects, colors) => {
           if (!isMountedRef.current) return;
 
           const isMobile = window.innerWidth < 768;
-          
-          // More particles, smaller size = vapor/dust effect
-          const particlesPerLetter = isMobile ? 80 : 150;
+          const particlesPerLetter = isMobile ? 60 : 120;
 
-          // Calculate center for directional coherence
-          const allCenterX = letterRects.reduce((sum, r) => sum + r.left + r.width / 2, 0) / letterRects.length;
-          const allCenterY = letterRects.reduce((sum, r) => sum + r.top + r.height / 2, 0) / letterRects.length;
+          // Calculate total width to determine each letter's position ratio
+          const validRects = letterRects.filter(r => r && r.width > 0);
+          if (validRects.length === 0) return;
+
+          const leftMost = Math.min(...validRects.map(r => r.left));
+          const rightMost = Math.max(...validRects.map(r => r.right));
+          const totalWidth = rightMost - leftMost || 1;
 
           letterRects.forEach((rect, i) => {
             if (!rect || rect.width === 0) return;
             
-            const letterCenterX = rect.left + rect.width / 2;
-            const letterCenterY = rect.top + rect.height / 2;
             const color = colors[i % colors.length] || '#FFFFFF';
             
-            // Direction: outward from text center, biased upward
-            const angleFromCenter = Math.atan2(
-              letterCenterY - allCenterY,
-              letterCenterX - allCenterX
-            );
+            // ============================================================
+            // CONE/TORNADO GEOMETRY
+            // ============================================================
+            // positionRatio: 0 = leftmost letter, 1 = rightmost letter
+            const letterCenter = rect.left + rect.width / 2;
+            const positionRatio = (letterCenter - leftMost) / totalWidth;
+            
+            // LEFT letters = wide spread, HIGH speed (the "source" of tornado)
+            // RIGHT letters = narrow spread, lower speed (the "tail")
+            const spreadMultiplier = 1 - positionRatio * 0.7; // 1.0 → 0.3
+            const speedMultiplier = 1.8 + (1 - positionRatio) * 1.5; // Right: 1.8, Left: 3.3
+            
+            // Base angle: UP-RIGHT (-π/4 = 45° up-right)
+            const baseAngle = -Math.PI / 4;
+            
+            // Spread angle: wider on left, tighter on right (cone shape)
+            const maxSpread = 0.9; // ~52° spread on left
+            const minSpread = 0.25; // ~14° spread on right
+            const spreadAngle = maxSpread - positionRatio * (maxSpread - minSpread);
 
             for (let j = 0; j < particlesPerLetter; j++) {
               // Spawn across the letter area
               const spawnX = rect.left + Math.random() * rect.width;
               const spawnY = rect.top + Math.random() * rect.height;
               
-              // Velocity: mostly upward drift with slight outward spread
-              // Apple-style = float up and dissolve, not explode outward
-              const spreadAngle = angleFromCenter * 0.3 + (Math.random() - 0.5) * 0.6;
-              const upwardBias = -Math.PI / 2; // Point up
-              const finalAngle = upwardBias + spreadAngle * 0.4;
+              // Cone spread: random angle within the spread range
+              const angleOffset = (Math.random() - 0.5) * spreadAngle * 2;
+              const finalAngle = baseAngle + angleOffset;
               
-              // Gentle speed, not explosive
-              const speed = 0.8 + Math.random() * 1.2;
+              // Speed varies: left particles are FASTER
+              const baseSpeed = 1.2 + Math.random() * 1.8;
+              const speed = baseSpeed * speedMultiplier * spreadMultiplier;
+              
+              // Particle size: slightly larger on left (more prominent)
+              const sizeMultiplier = 0.7 + spreadMultiplier * 0.6;
               
               particlesRef.current.push({
                 id: Date.now() + Math.random(),
@@ -173,19 +189,17 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
                 y: spawnY,
                 startX: spawnX,
                 startY: spawnY,
-                // Target is just "far away" in the drift direction
-                targetX: spawnX + Math.cos(finalAngle) * 400,
-                targetY: spawnY + Math.sin(finalAngle) * 400 - 200, // Extra upward
-                controlX: spawnX,
+                targetX: spawnX + Math.cos(finalAngle) * 600,
+                targetY: spawnY + Math.sin(finalAngle) * 600,
+                controlX: spawnX + 100,
                 controlY: spawnY - 100,
                 color,
-                // Smaller particles = dust/vapor aesthetic
-                size: 0.5 + Math.random() * 1.5,
-                alpha: 0.9,
+                size: (0.6 + Math.random() * 1.8) * sizeMultiplier,
+                alpha: 0.95,
                 progress: 0,
-                // Staggered: letters dissolve left-to-right
-                delay: i * 0.02 + Math.random() * 0.03,
-                speed: 0.008 + Math.random() * 0.006, // Slower = more elegant
+                // Stagger: LEFT letters first (wave sweeping right-to-left visually)
+                delay: i * 0.018 + Math.random() * 0.012,
+                speed: 0.012 + Math.random() * 0.008,
                 phase: 'burst',
                 burstVx: Math.cos(finalAngle) * speed,
                 burstVy: Math.sin(finalAngle) * speed,
@@ -237,7 +251,7 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     }, []);
 
     // ========================================================================
-    // ANIMATION LOOP - Modified to handle vapor-style text explosion
+    // ANIMATION LOOP - Tornado/cone physics for UP-RIGHT sweep
     // ========================================================================
     const animate = useCallback(() => {
       if (!isMountedRef.current) return;
@@ -246,7 +260,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
       const { width, height } = dimensionsRef.current;
 
       if (!ctx || !width || !height) {
-        // Use ref to schedule next frame (avoids self-reference issue)
         animationRef.current = requestAnimationFrame(() => animateFnRef.current());
         return;
       }
@@ -260,42 +273,46 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
           return;
         }
 
-        // Check if this is a "text explosion" particle (letterIndex === -1)
         const isTextExplosion = p.letterIndex === -1;
 
         if (p.phase === 'burst') {
           if (isTextExplosion) {
             // ================================================================
-            // VAPOR-STYLE BURST for text explosion
+            // TORNADO UP-RIGHT PHYSICS
             // ================================================================
             p.x += p.burstVx;
             p.y += p.burstVy;
             
-            // Gentle deceleration
-            p.burstVx *= 0.985;
-            p.burstVy *= 0.985;
+            // Drag: maintain diagonal momentum
+            p.burstVx *= 0.988;
+            p.burstVy *= 0.988;
             
-            // Slight upward float (negative gravity)
-            p.burstVy -= 0.02;
+            // Slight upward lift (tornado updraft)
+            p.burstVy -= 0.008;
             
-            // Add subtle horizontal drift (wind)
-            p.burstVx += (Math.random() - 0.5) * 0.03;
+            // Subtle rightward drift
+            p.burstVx += 0.01;
             
-            p.burstProgress += 0.012;
-            p.rotation += 0.01; // Slower rotation
+            // Turbulence - swirling motion
+            const swirl = Math.sin(p.burstProgress * 8 + p.rotation) * 0.03;
+            p.burstVx += swirl;
+            p.burstVy += (Math.random() - 0.5) * 0.025;
             
-            // Gradual fade out
-            if (p.burstProgress > 0.3) {
-              p.alpha *= 0.992;
+            p.burstProgress += 0.014;
+            p.rotation += 0.025;
+            
+            // Fade out
+            if (p.burstProgress > 0.2) {
+              p.alpha *= 0.985;
             }
             
-            // Shrink over time
-            if (p.burstProgress > 0.5) {
-              p.size *= 0.998;
+            // Shrink as it fades
+            if (p.burstProgress > 0.35) {
+              p.size *= 0.994;
             }
             
-            // Remove when faded or too far
-            if (p.alpha < 0.02 || p.burstProgress > 1.5) {
+            // Remove when faded or off-screen
+            if (p.alpha < 0.02 || p.x > window.innerWidth + 100 || p.y < -100) {
               dead.push(idx);
               return;
             }
@@ -364,25 +381,25 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         }
 
         // ====================================================================
-        // RENDER - Different styles for text vs logo particles
+        // RENDER
         // ====================================================================
         ctx.save();
         
         if (isTextExplosion) {
-          // Soft, blurred vapor particles for text explosion
+          // Soft dust particles with trail effect
           const gradient = ctx.createRadialGradient(
             p.x, p.y, 0,
-            p.x, p.y, p.size * 3
+            p.x, p.y, p.size * 3.5
           );
           gradient.addColorStop(0, p.color);
-          gradient.addColorStop(0.3, `${p.color}aa`);
-          gradient.addColorStop(0.6, `${p.color}44`);
+          gradient.addColorStop(0.25, `${p.color}bb`);
+          gradient.addColorStop(0.5, `${p.color}55`);
           gradient.addColorStop(1, 'transparent');
           
           ctx.globalAlpha = p.alpha;
           ctx.fillStyle = gradient;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size * 3.5, 0, Math.PI * 2);
           ctx.fill();
         } else {
           // Original rendering for logo particles
@@ -414,7 +431,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
         particlesRef.current.splice(dead[i], 1);
       }
 
-      // Schedule next frame via ref (avoids self-reference issue)
       animationRef.current = requestAnimationFrame(() => animateFnRef.current());
     }, [onLetterPainted]);
 
@@ -431,7 +447,6 @@ export const ParticleCanvas = forwardRef<ParticleCanvasHandle, Props>(
     useEffect(() => {
       isMountedRef.current = true;
 
-      // Capture current ref values for cleanup (fixes exhaustive-deps warning)
       const currentPaintedLetters = paintedLettersRef.current;
 
       handleResize();

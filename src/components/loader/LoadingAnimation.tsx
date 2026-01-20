@@ -20,7 +20,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { BRAND_COLORS, LOGO_CONFIGS, Company, LogoDirection } from '@/lib/brandColors';
 
 // ============================================================================
-// TIMINGS - SPED UP (~40% faster)
+// TIMINGS - SPED UP (~40% faster) + tighter dust transition
 // ============================================================================
 const TIMINGS = {
   headerAppear: 200,
@@ -36,15 +36,15 @@ const TIMINGS = {
   settleDelay: 500,
   settleDuration: 900,
 
-  // Text explosion phase
-  textExplodeDelay: 900, // Give gradient time to settle
-  textExplodeDuration: 400, // Explosion animation
+  // Text explosion phase - tightened for snappy dust sweep
+  textExplodeDelay: 700,
+  textExplodeDuration: 350,
 
-  // "Now working for you" reveal
-  revealDelay: 500, // Dramatic pause after explosion (darkness)
-  revealDuration: 1400, // Full reveal animation with scan
+  // "Now working for you" reveal - quick after dust clears
+  revealDelay: 300,
+  revealDuration: 1400,
 
-  exitDelay: 2200, // Time to admire the reveal
+  exitDelay: 2200,
   exitDuration: 600,
 } as const;
 
@@ -131,7 +131,6 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
   const [textExploding, setTextExploding] = useState(false);
   const [textExploded, setTextExploded] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
-  const [showFlash, setShowFlash] = useState(false);
 
   // Layout measurement state (client-only)
   const [textBounds, setTextBounds] = useState<DOMRect | null>(null);
@@ -444,12 +443,10 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         if (nextSettled) vibrate([20, 50, 20]);
       }
 
-      // Trigger text explosion
+      // Trigger text explosion (no flash)
       if (!mirrorRef.current.textExploding && nextTextExploding) {
         mirrorRef.current.textExploding = true;
         setTextExploding(true);
-        setShowFlash(true); // Flash on explosion
-        setTimeout(() => setShowFlash(false), 150);
         triggerTextExplosion();
       }
 
@@ -459,14 +456,11 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         setTextExploded(true);
       }
 
-      // Show reveal text
+      // Show reveal text (no flash)
       if (!mirrorRef.current.showReveal && nextShowReveal) {
         mirrorRef.current.showReveal = true;
         setShowReveal(true);
         setTriggerDecrypt(true);
-        // Second subtle flash when text materializes
-        setShowFlash(true);
-        setTimeout(() => setShowFlash(false), 100);
       }
 
       // Trigger exit animation
@@ -693,24 +687,6 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     >
       <NeuralBackground />
       <ParticleCanvas ref={particleRef} onLetterPainted={handleLetterPainted} />
-
-      {/* Energy burst flash overlay for transitions */}
-      <AnimatePresence>
-        {showFlash && (
-          <motion.div
-            className="fixed inset-0 pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.8, 0] }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, times: [0, 0.3, 1] }}
-            style={{
-              background:
-                'radial-gradient(circle at center, rgba(255,255,255,0.9) 0%, rgba(66,133,244,0.4) 30%, transparent 70%)',
-              zIndex: 45,
-            }}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Main content container */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pb-20">
