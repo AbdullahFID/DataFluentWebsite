@@ -44,7 +44,7 @@ const TIMINGS = {
   revealDelay: 150,
   revealDuration: 1200,
 
-  exitDelay: 800,
+  exitDelay: 500,
   exitDuration: 600,
 } as const;
 
