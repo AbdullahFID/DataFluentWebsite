@@ -1,9 +1,7 @@
-// LiquidGlassHero.tsx — Gooey EDGES Only Architecture
-// - Pill: Just gooey outline, no fill (black inside)
-// - Orbs: Gray border creates gooey effect, dark frosted glass fill
+// LiquidGlassHero.tsx — Performance Optimized
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import type { RefObject } from 'react';
 import {
   motion,
@@ -12,13 +10,23 @@ import {
   useSpring,
   useTransform,
   useScroll,
+  useMotionValueEvent,
 } from 'framer-motion';
 import { LOGO_COMPONENTS } from '@/components/loader/FaangLogos';
 import { BRAND_COLORS, Company } from '@/lib/brandColors';
+import FloatingLines from '@/components/backgrounds/FloatingLines';
+import DarkVeil from '@/components/backgrounds/DarkVeil';
 
-// ============================================================================
-// TYPES / CONFIG
-// ============================================================================
+const DATAFLUENT_LINE_GRADIENT = [
+  '#4FD1C5',
+  '#63B3ED',
+  '#7C3AED',
+  '#A855F7',
+  '#EC4899',
+];
+
+const DARK_VEIL_HUE_SHIFT = 280;
+
 interface BlobConfig {
   id: Company;
   angle: number;
@@ -27,11 +35,12 @@ interface BlobConfig {
 
 const COMPANIES: BlobConfig[] = [
   { id: 'google', angle: -Math.PI * 0.85, color: BRAND_COLORS.google[0] },
-  { id: 'apple', angle: -Math.PI * 0.42, color: '#E8E8E8' },  // Moved down slightly
+  { id: 'apple', angle: -Math.PI * 0.42, color: '#E8E8E8' },
   { id: 'meta', angle: -Math.PI * 0.15, color: BRAND_COLORS.meta[0] },
   { id: 'microsoft', angle: Math.PI * 0.75, color: BRAND_COLORS.microsoft[2] },
   { id: 'amazon', angle: Math.PI * 0.25, color: BRAND_COLORS.amazon[0] },
 ];
+
 
 // ============================================================================
 // HELPERS
@@ -97,10 +106,37 @@ function GooeyFilter({ id }: { id: string }) {
 export function LiquidGlassHero() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // === LAZY MOUNTING STATE ===
+  const [showFloatingLines, setShowFloatingLines] = useState(true);
+  const [showDarkVeil, setShowDarkVeil] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end end'],
+  });
+
+  // === LAZY MOUNT/UNMOUNT BASED ON SCROLL ===
+  useMotionValueEvent(scrollYProgress, 'change', (latest) => {
+    // Mount DarkVeil when approaching crossfade
+    if (latest > 0.25 && !showDarkVeil) {
+      setShowDarkVeil(true);
+    }
+    
+    // Unmount FloatingLines when fully faded
+    if (latest > 0.7 && showFloatingLines) {
+      setShowFloatingLines(false);
+    }
+    
+    // Re-mount FloatingLines if scrolling back up
+    if (latest < 0.6 && !showFloatingLines) {
+      setShowFloatingLines(true);
+    }
+    
+    // Unmount DarkVeil if scrolling back to top
+    if (latest < 0.2 && showDarkVeil) {
+      setShowDarkVeil(false);
+    }
   });
 
   const time = useMotionValue(0);
@@ -136,6 +172,25 @@ export function LiquidGlassHero() {
 
   const pillOpacity = useTransform(scrollYProgress, [0, 0.06, 0.2, 0.7, 0.9], [0, 0, 0.95, 0.5, 0]);
   const pillScale = useTransform(scrollYProgress, [0, 0.2, 0.8], [0.96, 1, 0.92]);
+  
+  // === BACKGROUND CROSSFADE ===
+  const floatingLinesOpacity = useTransform(
+    scrollYProgress, 
+    [0, 0.15, 0.45, 0.65], 
+    [0.7, 0.5, 0.2, 0]
+  );
+  
+  const darkVeilOpacity = useTransform(
+    scrollYProgress, 
+    [0.35, 0.55, 0.75, 1.0], 
+    [0, 0.4, 0.7, 0.85]
+  );
+
+  // === MEMOIZED PERFORMANCE SETTINGS ===
+  const perfSettings = useMemo(() => ({
+    maxDpr: isMobile ? 1 : 1.5,
+    targetFps: isMobile ? 24 : 30,
+  }), [isMobile]);
 
   return (
     <section
@@ -147,12 +202,58 @@ export function LiquidGlassHero() {
 
       <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
         
-        {/* === GOOEY LAYER - Solid shapes for metaball effect === */}
+        {/* === FLOATING LINES BACKGROUND (lazy mounted, fades out) === */}
+        {showFloatingLines && (
+          <motion.div 
+            className="absolute inset-0 z-0"
+            style={{ opacity: floatingLinesOpacity }}
+          >
+            <FloatingLines
+              linesGradient={DATAFLUENT_LINE_GRADIENT}
+              enabledWaves={['top', 'middle', 'bottom']}
+              lineCount={[3, 4, 3]}
+              lineDistance={[6, 5, 7]}
+              animationSpeed={0.6}
+              interactive={!isMobile}
+              bendRadius={5}
+              bendStrength={-0.5}
+              parallax={!isMobile}
+              parallaxStrength={0.15}
+              mixBlendMode="screen"
+              topWavePosition={{ x: 8.0, y: 0.6, rotate: -0.3 }}
+              middleWavePosition={{ x: 4.0, y: 0.0, rotate: 0.15 }}
+              bottomWavePosition={{ x: 2.0, y: -0.6, rotate: 0.3 }}
+              maxDpr={perfSettings.maxDpr}
+              targetFps={perfSettings.targetFps}
+            />
+          </motion.div>
+        )}
+
+        {/* === DARK VEIL BACKGROUND (lazy mounted, fades in) === */}
+        {showDarkVeil && (
+          <motion.div 
+            className="absolute inset-0 z-0"
+            style={{ opacity: darkVeilOpacity }}
+          >
+            <DarkVeil
+              hueShift={DARK_VEIL_HUE_SHIFT}
+              speed={0.3}
+              noiseIntensity={0.015}
+              scanlineIntensity={0}
+              scanlineFrequency={0}
+              warpAmount={0.2}
+              resolutionScale={isMobile ? 0.5 : 0.75}
+              maxDpr={perfSettings.maxDpr}
+              targetFps={perfSettings.targetFps}
+            />
+          </motion.div>
+        )}
+        
+        {/* === GOOEY LAYER === */}
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
           style={{ filter: 'url(#goo)' }}
         >
-          {/* Solid pill for gooey effect */}
           <motion.div
             className="absolute rounded-full"
             style={{
@@ -160,12 +261,10 @@ export function LiquidGlassHero() {
               height: pillHeight,
               scale: pillScale,
               opacity: pillOpacity,
-              // Slightly lighter for subtler border
               background: 'rgba(110, 125, 155, 0.65)',
             }}
           />
 
-          {/* Orb edge rings with membrane */}
           {COMPANIES.map((company, i) => (
             <GooeyOrbEdge
               key={`edge-${company.id}`}
@@ -182,22 +281,21 @@ export function LiquidGlassHero() {
           ))}
         </div>
 
-        {/* === BLACK MASK - Covers pill center, exposes gooey edges === */}
+        {/* === BLACK MASK === */}
         <motion.div
-          className="absolute rounded-full"
+          className="absolute rounded-full z-20"
           style={{
-            width: pillWidth - (isMobile ? 8 : 12),  // Even thinner border
+            width: pillWidth - (isMobile ? 8 : 12),
             height: pillHeight - (isMobile ? 8 : 12),
             scale: pillScale,
             opacity: pillOpacity,
-            background: '#050508',  // Same as page background
+            background: '#050508',
           }}
         />
 
-        {/* === CRISP LAYER - Dark glass fills, logos, text === */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {/* === CRISP LAYER === */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           
-          {/* Pill glass highlight (subtle, no fill) */}
           <motion.div
             className="absolute rounded-full overflow-hidden"
             style={{
@@ -208,7 +306,6 @@ export function LiquidGlassHero() {
               background: 'transparent',
             }}
           >
-            {/* Subtle top highlight only */}
             <div
               className="absolute"
               style={{
@@ -223,7 +320,6 @@ export function LiquidGlassHero() {
             />
           </motion.div>
 
-          {/* Datafluent text */}
           <motion.div
             className="absolute flex items-center justify-center z-10"
             style={{ scale: pillScale }}
@@ -231,7 +327,6 @@ export function LiquidGlassHero() {
             <DatafluentText textRef={textMeasureRef} isMobile={isMobile} />
           </motion.div>
 
-          {/* Dark frosted glass orbs with logos */}
           {COMPANIES.map((company, i) => (
             <FrostedGlassOrb
               key={`orb-${company.id}`}
@@ -280,7 +375,6 @@ function DatafluentText({
 
   return (
     <div className="relative">
-      {/* Ambient glow layer */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -301,7 +395,6 @@ function DatafluentText({
         </div>
       </motion.div>
 
-      {/* Shimmer sweep effect - subtle */}
       <motion.div
         className="absolute inset-0 pointer-events-none overflow-hidden"
         style={{ mixBlendMode: 'overlay' }}
@@ -325,7 +418,6 @@ function DatafluentText({
         />
       </motion.div>
 
-      {/* Main text */}
       <h1
         ref={textRef}
         className={`relative font-black tracking-tight flex ${
@@ -362,7 +454,7 @@ function DatafluentText({
 }
 
 // ============================================================================
-// GOOEY ORB EDGE - Just the border/ring that creates the stretchy effect
+// GOOEY ORB EDGE
 // ============================================================================
 function GooeyOrbEdge({
   config,
@@ -392,7 +484,6 @@ function GooeyOrbEdge({
   const baseEdge = ellipseRadiusAtAngle(a, b, config.angle);
   const edge = useTransform(pillScale, (s) => baseEdge * (s as number));
 
-  // Timing adjusted for 180vh scroll
   const staggerDelay = index * 0.06;
   const startAt = 0.15 + staggerDelay;
   const peakAt = startAt + 0.12;
@@ -412,7 +503,7 @@ function GooeyOrbEdge({
   });
 
   const phase = index * 1.2 + config.angle;
-  const floatAmp = isMobile ? 6 : 10;  // More noticeable float
+  const floatAmp = isMobile ? 6 : 10;
   const floatX = useTransform(time, (t) => Math.sin(t / 1200 + phase) * floatAmp);
   const floatY = useTransform(time, (t) => Math.cos(t / 1400 + phase * 1.2) * floatAmp * 0.8);
 
@@ -424,14 +515,12 @@ function GooeyOrbEdge({
 
   const opacity = useTransform(scrollProgress, [startAt - 0.02, startAt + 0.06], [0, 0.95]);
 
-  // Membrane fades out after settle
   const membraneOpacity = useTransform(
     scrollProgress,
     [startAt, startAt + 0.06, settleAt - 0.02, settleAt + 0.06],
     [0, 1, 1, 0]
   );
 
-  // Membrane bead positions
   const beadFractions = [0.0, 0.15, 0.32, 0.5, 0.68, 0.85];
   
   const d0 = useTransform2(edge, pull, (e, p) => e * 0.8 + p * beadFractions[0]);
@@ -467,7 +556,6 @@ function GooeyOrbEdge({
   const b5X = useTransform2(b5x, floatX, (aa, bb) => aa + bb * 0.95);
   const b5Y = useTransform2(b5y, floatY, (aa, bb) => aa + bb * 0.95);
 
-  // Bead sizes shrink when stretched
   const neckThin = useTransform(pull, [0, maxDistance * 0.3, maxDistance * 0.7, maxDistance], [1, 0.7, 0.4, 0.15]);
   
   const baseSizes = [orbSize * 0.7, orbSize * 0.55, orbSize * 0.42, orbSize * 0.32, orbSize * 0.24, orbSize * 0.18];
@@ -484,7 +572,6 @@ function GooeyOrbEdge({
       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
       style={{ opacity }}
     >
-      {/* Membrane beads - solid for proper gooey merging */}
       <motion.div style={{ opacity: membraneOpacity }}>
         <motion.div className="absolute rounded-full" style={{ width: bead0Size, height: bead0Size, x: b0X, y: b0Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
         <motion.div className="absolute rounded-full" style={{ width: bead1Size, height: bead1Size, x: b1X, y: b1Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
@@ -494,7 +581,6 @@ function GooeyOrbEdge({
         <motion.div className="absolute rounded-full" style={{ width: bead5Size, height: bead5Size, x: b5X, y: b5Y, translateX: '-50%', translateY: '-50%', background: 'rgba(110, 125, 155, 0.65)' }} />
       </motion.div>
 
-      {/* Main orb - solid for gooey */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -512,7 +598,7 @@ function GooeyOrbEdge({
 }
 
 // ============================================================================
-// FROSTED GLASS ORB - Dark glass fill with subtle effects
+// FROSTED GLASS ORB
 // ============================================================================
 function FrostedGlassOrb({
   config,
@@ -537,7 +623,7 @@ function FrostedGlassOrb({
 }) {
   const Logo = LOGO_COMPONENTS[config.id];
   const orbSize = isMobile ? 85 : 130;
-  const innerOrbSize = orbSize - (isMobile ? 4 : 5);  // Even thinner border
+  const innerOrbSize = orbSize - (isMobile ? 4 : 5);
   const logoSize = isMobile ? 40 : 60;
 
   const a = pillWidth / 2;
@@ -545,7 +631,6 @@ function FrostedGlassOrb({
   const baseEdge = ellipseRadiusAtAngle(a, b, config.angle);
   const edge = useTransform(pillScale, (s) => baseEdge * (s as number));
 
-  // Timing adjusted for 180vh scroll - match gooey layer
   const staggerDelay = index * 0.06;
   const startAt = 0.15 + staggerDelay;
   const peakAt = startAt + 0.12;
@@ -565,7 +650,7 @@ function FrostedGlassOrb({
   });
 
   const phase = index * 1.2 + config.angle;
-  const floatAmp = isMobile ? 6 : 10;  // More noticeable float
+  const floatAmp = isMobile ? 6 : 10;
   const floatX = useTransform(time, (t) => Math.sin(t / 1200 + phase) * floatAmp);
   const floatY = useTransform(time, (t) => Math.cos(t / 1400 + phase * 1.2) * floatAmp * 0.8);
 
@@ -602,7 +687,6 @@ function FrostedGlassOrb({
           width: innerOrbSize,
           height: innerOrbSize,
           borderRadius: '50%',
-          // Dark frosted glass - almost black
           background: `radial-gradient(circle at 30% 25%,
             rgba(28, 32, 42, 0.92) 0%,
             rgba(18, 22, 32, 0.95) 50%,
@@ -618,7 +702,6 @@ function FrostedGlassOrb({
           overflow: 'hidden',
         }}
       >
-        {/* Subtle chromatic top edge */}
         <div
           className="absolute"
           style={{
@@ -631,7 +714,6 @@ function FrostedGlassOrb({
             filter: 'blur(2px)',
           }}
         />
-        {/* Main highlight */}
         <div
           className="absolute"
           style={{
@@ -644,7 +726,6 @@ function FrostedGlassOrb({
             filter: 'blur(6px)',
           }}
         />
-        {/* Bright spec */}
         <div
           className="absolute rounded-full"
           style={{
@@ -657,7 +738,6 @@ function FrostedGlassOrb({
           }}
         />
 
-        {/* Logo */}
         <div className="relative z-10" style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' }}>
           <Logo size={logoSize} />
         </div>
@@ -674,7 +754,7 @@ function ScrollIndicator({ scrollProgress }: { scrollProgress: MotionValue<numbe
 
   return (
     <motion.div
-      className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-40"
       style={{ opacity }}
     >
       <span className="text-white/40 text-sm font-medium">Scroll to explore</span>
