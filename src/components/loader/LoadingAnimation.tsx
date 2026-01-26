@@ -58,7 +58,20 @@ const LOGO_ORBITS: Record<LogoDirection, LogoOrbit> = {
   'bottom-right': { vx: 0.85, vy: 0.85, origin: 'bottom right' },
 };
 
+// Mobile-friendly orbit overrides - positions that work on narrow screens
+const MOBILE_LOGO_ORBITS: Record<LogoDirection, LogoOrbit> = {
+  'bottom-left': { vx: -0.5, vy: 1, origin: 'bottom left' },
+  top: { vx: 0, vy: -1, origin: 'top center' },
+  // Right → move to top-right on mobile (more clearance)
+  right: { vx: 0.5, vy: -1, origin: 'top right' },
+  left: { vx: -0.5, vy: -1, origin: 'top left' },
+  // Bottom-right → move to bottom center on mobile
+  'bottom-right': { vx: 0, vy: 1, origin: 'bottom center' },
+};
+
 const LOGO_BOX_SIZE = 200;
+const MOBILE_LOGO_BOX_SIZE = 140; // Smaller on mobile
+const MOBILE_BREAKPOINT = 640; // sm breakpoint
 
 function clampNum(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -148,6 +161,9 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     (i: number): Company | null => LOGO_CONFIGS[i]?.name ?? null,
     []
   );
+
+  // Detect mobile
+  const isMobile = viewport.w > 0 && viewport.w < MOBILE_BREAKPOINT;
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
@@ -497,7 +513,13 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
   const LogoComponent = currentCompany ? LOGO_COMPONENTS[currentCompany] : null;
   const logoColors = currentCompany ? BRAND_COLORS[currentCompany] : [];
   const currentConfig = currentCompany ? LOGO_CONFIGS.find((c) => c.name === currentCompany) : null;
-  const orbit = currentConfig ? LOGO_ORBITS[currentConfig.entranceDirection] : LOGO_ORBITS.top;
+  
+  // Use mobile orbits on narrow screens
+  const orbitMap = isMobile ? MOBILE_LOGO_ORBITS : LOGO_ORBITS;
+  const orbit = currentConfig ? orbitMap[currentConfig.entranceDirection] : orbitMap.top;
+  
+  // Responsive logo box size
+  const logoBoxSize = isMobile ? MOBILE_LOGO_BOX_SIZE : LOGO_BOX_SIZE;
 
   const logoPixelPos = useMemo(() => {
     const vw = viewport.w || 0;
@@ -513,11 +535,14 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     const halfTextW = textBounds ? textBounds.width / 2 : 140;
     const halfTextH = textBounds ? textBounds.height / 2 : 50;
 
-    const entryScaleSafety = 2;
-    const safeW = LOGO_BOX_SIZE * entryScaleSafety;
-    const safeH = LOGO_BOX_SIZE * entryScaleSafety;
+    const entryScaleSafety = isMobile ? 1.5 : 2;
+    const safeW = logoBoxSize * entryScaleSafety;
+    const safeH = logoBoxSize * entryScaleSafety;
 
-    const margin = clampNum(Math.round(Math.min(vw, vh) * 0.06), 18, 56);
+    // Smaller margin on mobile
+    const margin = isMobile 
+      ? clampNum(Math.round(Math.min(vw, vh) * 0.03), 8, 24)
+      : clampNum(Math.round(Math.min(vw, vh) * 0.06), 18, 56);
 
     const dx = halfTextW + margin + safeW / 2;
     const dy = halfTextH + margin + safeH / 2;
@@ -525,15 +550,15 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
     const ox = orbit.vx * dx;
     const oy = orbit.vy * dy;
 
-    const left = cx + ox - LOGO_BOX_SIZE / 2;
-    const top = cy + oy - LOGO_BOX_SIZE / 2;
+    const left = cx + ox - logoBoxSize / 2;
+    const top = cy + oy - logoBoxSize / 2;
 
-    const pad = 10;
+    const pad = isMobile ? 5 : 10;
     return {
-      left: clampNum(left, pad, vw - LOGO_BOX_SIZE - pad),
-      top: clampNum(top, pad, vh - LOGO_BOX_SIZE - pad),
+      left: clampNum(left, pad, vw - logoBoxSize - pad),
+      top: clampNum(top, pad, vh - logoBoxSize - pad),
     };
-  }, [viewport.w, viewport.h, textBounds, orbit.vx, orbit.vy]);
+  }, [viewport.w, viewport.h, textBounds, orbit.vx, orbit.vy, isMobile, logoBoxSize]);
 
   if (isComplete) return null;
 
@@ -542,8 +567,8 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
       position: 'fixed',
       left: `${logoPixelPos.left}px`,
       top: `${logoPixelPos.top}px`,
-      width: `${LOGO_BOX_SIZE}px`,
-      height: `${LOGO_BOX_SIZE}px`,
+      width: `${logoBoxSize}px`,
+      height: `${logoBoxSize}px`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -598,6 +623,9 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
         };
     }
   };
+
+  // Responsive logo size for the actual SVG
+  const logoSvgSize = isMobile ? 100 : 180;
 
   return (
     <motion.div
@@ -698,7 +726,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
               <RevealText
                 text="Now working for you"
                 trigger={triggerDecrypt}
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight"
               />
             </motion.div>
           )}
@@ -721,7 +749,7 @@ export function LoadingAnimation({ onComplete }: LoadingAnimationProps) {
                 animation: companyPhase === 'visible' ? 'glowPulse 450ms ease-in-out' : 'none',
               }}
             />
-            <LogoComponent size={180} className="relative z-10" />
+            <LogoComponent size={logoSvgSize} className="relative z-10" />
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useRef } from 'react';
-import LiquidGlass from 'liquid-glass-react';
+import GlassSurface from '@/components/ui/GlassSurface';
 import { FINAL_GRADIENT } from '@/lib/brandColors';
 
 interface Props {
@@ -36,7 +36,7 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
         }}
       >
         {/* ================================================================
-            LIQUID GLASS AMBIENT GLOW - Blurred, no hard edges
+            AMBIENT GLOW - Blurred background glow
         ================================================================ */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -52,32 +52,43 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
         />
 
         {/* ================================================================
-            LIQUID GLASS BACKGROUND PANEL - Positioned behind text
+            GLASS SURFACE BACKGROUND PANEL - Custom GlassSurface component
         ================================================================ */}
         <div
           ref={containerRef}
-          className="absolute inset-0 -inset-x-8 -inset-y-4 pointer-events-auto"
-          style={{ zIndex: 0 }}
+          className="absolute pointer-events-auto"
+          style={{ 
+            zIndex: 0,
+            // Extend slightly beyond text bounds
+            left: '-2rem',
+            right: '-2rem',
+            top: '-0.75rem',
+            bottom: '-0.75rem',
+          }}
         >
-          <LiquidGlass
-            mouseContainer={containerRef}
-            displacementScale={40}
-            blurAmount={0.04}
-            saturation={150}
-            aberrationIntensity={1.5}
-            elasticity={0.2}
-            cornerRadius={24}
-            overLight={false}
+          <GlassSurface
+            width="100%"
+            height="100%"
+            borderRadius={24}
+            borderWidth={0.05}
+            brightness={45}
+            opacity={0.9}
+            blur={14}
+            displace={0.6}
+            backgroundOpacity={0.06}
+            saturation={1.4}
+            distortionScale={-100}
+            redOffset={1}
+            greenOffset={4}
+            blueOffset={10}
+            xChannel="R"
+            yChannel="G"
+            mixBlendMode="screen"
             style={{
-              width: '100%',
-              height: '100%',
               position: 'absolute',
               inset: 0,
             }}
-          >
-            {/* Empty - just the glass effect */}
-            <div style={{ width: '100%', height: '100%' }} />
-          </LiquidGlass>
+          />
         </div>
 
         {/* ================================================================

@@ -1,4 +1,4 @@
-// RevealText.tsx - BIG BOLD text, fast reveal
+// RevealText.tsx - BIG BOLD text, fast reveal, NO WRAP
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -49,7 +49,7 @@ function getCharColor(index: number, char: string): string {
 }
 
 /**
- * BIG BOLD text reveal - fast and punchy
+ * BIG BOLD text reveal - fast and punchy, NO WRAPPING
  */
 export function RevealText({ 
   text, 
@@ -84,13 +84,17 @@ export function RevealText({
 
   return (
     <div 
-      className={`relative ${className}`}
+      className={`relative w-full px-4 ${className}`}
       style={{ background: 'transparent' }}
     >
-      {/* Text container */}
+      {/* Text container - NO WRAP, centered, scales to fit */}
       <div 
-        className="relative z-10 flex flex-wrap justify-center select-none"
-        style={{ background: 'transparent' }}
+        className="relative z-10 flex justify-center items-center select-none whitespace-nowrap"
+        style={{ 
+          background: 'transparent',
+          // Scale down if needed to fit viewport
+          maxWidth: '100vw',
+        }}
       >
         {chars.map((ch, i) => {
           const isSpace = ch === ' ';
@@ -141,7 +145,8 @@ export function RevealText({
                 },
               }}
               style={{
-                marginRight: isSpace ? '0.25em' : '0.01em',
+                // Tighter spacing on mobile, normal on desktop
+                marginRight: isSpace ? '0.2em' : '-0.01em',
                 color: color,
                 textShadow: shouldAnimate && !isSpace
                   ? `0 0 30px ${color}88, 0 0 60px ${color}44, 0 0 90px ${color}22`
@@ -154,8 +159,6 @@ export function RevealText({
           );
         })}
       </div>
-
-
     </div>
   );
 }
