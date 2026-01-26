@@ -68,8 +68,8 @@ const FLOAT_CONFIG = {
   xPeriod: 2600,
   yPeriod: 3200,
   amplitudeDesktop: 12,
-  amplitudeMobile: 6,
-};
+  amplitudeMobile: 4,  // Less float movement
+}
 
 interface BlobConfig {
   id: Company;
@@ -201,7 +201,7 @@ export function LiquidGlassHero() {
   const pillWidth = Math.max(isMobile ? 280 : 820, baseTextW + padX * 2);
   const pillHeight = Math.max(isMobile ? 75 : 160, baseTextH + padY * 2);
 
-  const maxDistance = isMobile ? 140 : 240;
+const maxDistance = isMobile ? 70 : 240;
 
   const pillOpacity = useTransform(
     scrollYProgress,
@@ -436,7 +436,7 @@ function GooeyBlob({
   time: MotionValue<number>;
   isMobile: boolean;
 }) {
-  const orbSize = isMobile ? 100 : 155;
+const orbSize = isMobile ? 70 : 155;
 
   const a = pillWidth / 2;
   const b = pillHeight / 2;
@@ -626,8 +626,8 @@ function LiquidGlassOrb({
   isMobile: boolean;
 }) {
   const Logo = LOGO_COMPONENTS[config.id];
-  const orbSize = isMobile ? 100 : 155;
-  const logoSize = isMobile ? 55 : 85;
+const orbSize = isMobile ? 70 : 155;
+const logoSize = isMobile ? 38 : 85;
 
   const [isHovered, setIsHovered] = useState(false);
 
