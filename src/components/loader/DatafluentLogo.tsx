@@ -54,42 +54,45 @@ export const DatafluentLogo = forwardRef<HTMLDivElement, Props>(
         {/* ================================================================
             GLASS SURFACE BACKGROUND PANEL - Custom GlassSurface component
         ================================================================ */}
-        <div
-          ref={containerRef}
-          className="absolute pointer-events-auto"
-          style={{ 
-            zIndex: 0,
-            // Extend slightly beyond text bounds
-            left: '-2rem',
-            right: '-2rem',
-            top: '-0.75rem',
-            bottom: '-0.75rem',
-          }}
-        >
-          <GlassSurface
-            width="100%"
-            height="100%"
-            borderRadius={24}
-            borderWidth={0.05}
-            brightness={45}
-            opacity={0.9}
-            blur={14}
-            displace={0.6}
-            backgroundOpacity={0.06}
-            saturation={1.4}
-            distortionScale={-100}
-            redOffset={1}
-            greenOffset={4}
-            blueOffset={10}
-            xChannel="R"
-            yChannel="G"
-            mixBlendMode="screen"
-            style={{
-              position: 'absolute',
-              inset: 0,
-            }}
-          />
-        </div>
+        {/* ================================================================
+    GLASS SURFACE BACKGROUND PANEL - More liquid glass effect
+================================================================ */}
+<div
+  ref={containerRef}
+  className="absolute pointer-events-auto"
+  style={{ 
+    zIndex: 0,
+    left: '-2.5rem',
+    right: '-2.5rem',
+    top: '-1rem',
+    bottom: '-1rem',
+  }}
+>
+  <GlassSurface
+    width="100%"
+    height="100%"
+    borderRadius={32}
+    // CRANKED liquid glass settings
+    borderWidth={0.08}
+    brightness={50}
+    opacity={0.92}
+    blur={16}
+    displace={0.7}
+    backgroundOpacity={0.08}
+    saturation={1.5}
+    distortionScale={-140}
+    redOffset={2}
+    greenOffset={8}
+    blueOffset={18}
+    xChannel="R"
+    yChannel="G"
+    mixBlendMode="screen"
+    style={{
+      position: 'absolute',
+      inset: 0,
+    }}
+  />
+</div>
 
         {/* ================================================================
             MAIN TEXT - On top of glass

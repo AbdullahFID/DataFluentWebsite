@@ -17,6 +17,7 @@ import { BRAND_COLORS, Company } from '@/lib/brandColors';
 import LightRays from '@/components/backgrounds/LightRays';
 import Galaxy from '@/components/backgrounds/Galaxy';
 import GlassSurface from '@/components/ui/GlassSurface';
+import TextShiny from '@/components/ui/TextShiny';
 
 // ============================================================================
 // CONSTANTS
@@ -304,21 +305,21 @@ const maxDistance = isMobile ? 70 : 240;
           style={{ filter: 'url(#goo)', opacity: gooeyOpacity }}
         >
           <motion.div
-            className="absolute rounded-full"
-            style={{
-              width: pillWidth,
-              height: pillHeight,
-              scale: pillScale,
-              opacity: pillOpacity,
-              background: `
-                radial-gradient(ellipse 120% 100% at 50% 30%, 
-                  rgba(140, 155, 185, 0.72) 0%, 
-                  rgba(100, 115, 145, 0.62) 40%,
-                  rgba(80, 95, 125, 0.52) 100%
-                )
-              `,
-            }}
-          />
+  className="absolute rounded-full"
+  style={{
+    width: pillWidth,
+    height: pillHeight,
+    scale: pillScale,
+    opacity: pillOpacity,
+    background: `
+      radial-gradient(ellipse 120% 100% at 50% 30%, 
+        rgba(255, 255, 255, 0.72) 0%, 
+        rgba(240, 240, 245, 0.62) 40%,
+        rgba(210, 210, 220, 0.52) 100%
+      )
+    `,
+  }}
+/>
 
           {COMPANIES.map((company, i) => (
             <GooeyBlob
@@ -348,47 +349,68 @@ const maxDistance = isMobile ? 70 : 240;
           }}
         />
 
-        {/* === CONTENT LAYER === */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <motion.div
-            className="absolute rounded-full overflow-hidden"
-            style={{
-              width: pillWidth,
-              height: pillHeight,
-              scale: pillScale,
-              opacity: pillOpacity,
-            }}
-          >
-            <div
-              className="absolute"
-              style={{
-                width: '65%',
-                height: '18%',
-                top: '8%',
-                left: '17.5%',
-                borderRadius: '999px',
-                background:
-                  'linear-gradient(180deg, rgba(255,255,255,0.09) 0%, transparent 100%)',
-                filter: 'blur(10px)',
-              }}
-            />
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: `
-                  radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 50%),
-                  radial-gradient(ellipse 100% 100% at 50% 100%, rgba(255,255,255,0.02) 0%, transparent 40%)
-                `,
-              }}
-            />
-          </motion.div>
+       {/* === CONTENT LAYER === */}
+<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+  <motion.div
+    className="absolute"
+    style={{
+      scale: pillScale,
+      opacity: pillOpacity,
+    }}
+  >
+    <GlassSurface
+  width={pillWidth}
+  height={pillHeight}
+  borderRadius={9999}
+  // CRANKED settings for desktop
+  distortionScale={isMobile ? -45 : -120}
+  redOffset={isMobile ? 1 : 3}
+  greenOffset={isMobile ? 3 : 12}
+  blueOffset={isMobile ? 6 : 24}
+  brightness={isMobile ? 55 : 52}
+  opacity={0.94}
+  blur={isMobile ? 10 : 14}
+  displace={isMobile ? 0.3 : 0.6}
+  backgroundOpacity={isMobile ? 0.03 : 0.06}
+  saturation={isMobile ? 1.15 : 1.4}
+  borderWidth={isMobile ? 0.05 : 0.09}
+  mixBlendMode="screen"
+>
+      {/* Inner shine overlays */}
+      <div
+        className="absolute"
+        style={{
+          width: '65%',
+          height: '18%',
+          top: '8%',
+          left: '17.5%',
+          borderRadius: '999px',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.09) 0%, transparent 100%)',
+          filter: 'blur(10px)',
+        }}
+      />
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: `
+            radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 50%),
+            radial-gradient(ellipse 100% 100% at 50% 100%, rgba(255,255,255,0.02) 0%, transparent 40%)
+          `,
+        }}
+      />
+    </GlassSurface>
+  </motion.div>
 
-          <motion.div
-            className="absolute flex items-center justify-center z-10"
-            style={{ scale: pillScale }}
-          >
-            <DatafluentText textRef={textMeasureRef} isMobile={isMobile} />
-          </motion.div>
+           <motion.div
+    className="absolute flex items-center justify-center z-10"
+    style={{ scale: pillScale }}
+  >
+    <DatafluentText 
+  textRef={textMeasureRef} 
+  isMobile={isMobile} 
+  scrollProgress={scrollYProgress}
+/>
+  </motion.div>
 
           {COMPANIES.map((company, i) => (
             <LiquidGlassOrb
@@ -436,7 +458,7 @@ function GooeyBlob({
   time: MotionValue<number>;
   isMobile: boolean;
 }) {
-const orbSize = isMobile ? 70 : 155;
+  const orbSize = isMobile ? 70 : 155;
 
   const a = pillWidth / 2;
   const b = pillHeight / 2;
@@ -471,7 +493,29 @@ const orbSize = isMobile ? 70 : 155;
   const x = useTransform2(baseX, floatX, (bx, fx) => bx + fx);
   const y = useTransform2(baseY, floatY, (by, fy) => by + fy);
 
+  // Blob absorbs white as it emerges
   const opacity = useTransform(scrollProgress, [startAt - 0.02, startAt + 0.1], [0, 1]);
+  
+  // Brightness ramps up as blob "absorbs" color from text
+  const colorIntensity = useTransform(
+    scrollProgress,
+    [startAt, startAt + 0.15, 0.5],
+    [0.5, 0.85, 1]
+  );
+
+  // Dynamic white values based on absorption
+  const bgWhite = useTransform(colorIntensity, (i) => {
+    const base = Math.round(180 + i * 75); // 180 → 255
+    const mid = Math.round(160 + i * 65);  // 160 → 225
+    const dark = Math.round(140 + i * 50); // 140 → 190
+    return `
+      radial-gradient(ellipse 100% 100% at 35% 30%,
+        rgba(${base}, ${base}, ${base}, 0.75) 0%,
+        rgba(${mid}, ${mid}, ${mid + 5}, 0.65) 50%,
+        rgba(${dark}, ${dark}, ${dark + 10}, 0.55) 100%
+      )
+    `;
+  });
 
   return (
     <motion.div
@@ -484,123 +528,161 @@ const orbSize = isMobile ? 70 : 155;
         opacity,
         translateX: '-50%',
         translateY: '-50%',
-        background: `
-          radial-gradient(ellipse 100% 100% at 35% 30%,
-            rgba(140, 155, 185, 0.7) 0%,
-            rgba(100, 115, 145, 0.6) 50%,
-            rgba(80, 95, 125, 0.5) 100%
-          )
-        `,
+        background: bgWhite,
       }}
     />
   );
 }
 
-// ============================================================================
-// DATAFLUENT TEXT
-// ============================================================================
 function DatafluentText({
   textRef,
   isMobile,
+  scrollProgress,
 }: {
   textRef: RefObject<HTMLHeadingElement | null>;
   isMobile: boolean;
+  scrollProgress: MotionValue<number>;
 }) {
-  const letters = 'Datafluent'.split('');
-  const letterColors = [
-    BRAND_COLORS.google[0],
-    BRAND_COLORS.google[1],
-    BRAND_COLORS.google[2],
-    BRAND_COLORS.google[3],
-    '#A2AAAD',
-    BRAND_COLORS.meta[0],
-    BRAND_COLORS.meta[1],
-    BRAND_COLORS.microsoft[2],
-    BRAND_COLORS.microsoft[1],
-    BRAND_COLORS.amazon[0],
-  ];
+  const whiteOpacity = useTransform(scrollProgress, [0, 0.12, 0.35, 0.55], [1, 1, 0.4, 0]);
+  const whiteScale = useTransform(scrollProgress, [0.35, 0.55], [1, 0.98]);
+  const glassOpacity = useTransform(scrollProgress, [0.4, 0.55, 0.7], [0, 0.7, 1]);
+
+  const textClasses = `font-black tracking-tight ${
+    isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
+  }`;
+
+  const clipId = 'datafluent-glass-clip';
+  const fontSize = isMobile ? 36 : 96;
 
   return (
     <div className="relative">
+      {/* Glow behind */}
       <motion.div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none flex items-center justify-center"
         style={{
-          filter: 'blur(25px)',
-          opacity: 0.35,
+          filter: 'blur(30px)',
+          opacity: useTransform(whiteOpacity, (o) => o * 0.3),
         }}
       >
-        <div
-          className={`font-black tracking-tight flex ${
-            isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
-          }`}
-        >
-          {letters.map((letter, i) => (
-            <span key={i} style={{ color: letterColors[i] }}>
-              {letter}
-            </span>
-          ))}
-        </div>
+        <span className={textClasses} style={{ color: '#ffffff' }}>
+          Datafluent
+        </span>
       </motion.div>
 
+      {/* Shiny white text — drains into blobs */}
       <motion.div
-        className="absolute inset-0 pointer-events-none overflow-hidden"
-        style={{ mixBlendMode: 'overlay' }}
+        className="relative"
+        style={{
+          opacity: whiteOpacity,
+          scale: whiteScale,
+        }}
       >
-        <motion.div
-          className="absolute h-full"
+        <h1
+          ref={textRef}
+          className={textClasses}
           style={{
-            width: '20%',
-            background:
-              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
-            filter: 'blur(15px)',
+            textShadow: '0 0 40px rgba(255,255,255,0.25), 0 0 80px rgba(255,255,255,0.12)',
           }}
-          animate={{
-            x: ['-100%', '600%'],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            repeatDelay: 5,
-            ease: [0.25, 0.1, 0.25, 1],
-          }}
-        />
+        >
+          <TextShiny
+            text="Datafluent"
+            color="#d0d0d0"
+            shineColor="#ffffff"
+            speed={4}
+            delay={2}
+            spread={115}
+            direction="left"
+          />
+        </h1>
       </motion.div>
 
-      <h1
-        ref={textRef}
-        className={`relative font-black tracking-tight flex ${
-          isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
-        }`}
+      {/* TRUE GLASS TEXT — SVG clip + backdrop-filter */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        style={{ opacity: glassOpacity }}
       >
-        {letters.map((letter, i) => (
-          <motion.span
-            key={i}
-            style={{
-              color: letterColors[i],
-              textShadow: `0 0 30px ${letterColors[i]}45, 0 0 60px ${letterColors[i]}20`,
-            }}
-            animate={{
-              textShadow: [
-                `0 0 30px ${letterColors[i]}45, 0 0 60px ${letterColors[i]}20`,
-                `0 0 40px ${letterColors[i]}55, 0 0 80px ${letterColors[i]}28`,
-                `0 0 30px ${letterColors[i]}45, 0 0 60px ${letterColors[i]}20`,
-              ],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              delay: i * 0.25,
-              ease: 'easeInOut',
-            }}
+        <svg
+          width={isMobile ? 280 : 700}
+          height={isMobile ? 60 : 140}
+          viewBox={`0 0 ${isMobile ? 280 : 700} ${isMobile ? 60 : 140}`}
+          className="overflow-visible"
+        >
+          <defs>
+            <clipPath id={clipId}>
+              <text
+                x="50%"
+                y="55%"
+                dominantBaseline="middle"
+                textAnchor="middle"
+                fontSize={fontSize}
+                fontWeight="900"
+                fontFamily="system-ui, -apple-system, sans-serif"
+                letterSpacing="-0.02em"
+              >
+                Datafluent
+              </text>
+            </clipPath>
+          </defs>
+
+          {/* Glass fill — this is what creates the actual glass effect */}
+          <foreignObject
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            clipPath={`url(#${clipId})`}
           >
-            {letter}
-          </motion.span>
-        ))}
-      </h1>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                backdropFilter: 'blur(12px) saturate(1.4) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(12px) saturate(1.4) brightness(1.1)',
+                background: 'rgba(255, 255, 255, 0.08)',
+              }}
+            />
+          </foreignObject>
+
+          {/* Subtle edge highlight */}
+          <text
+            x="50%"
+            y="55%"
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fontSize={fontSize}
+            fontWeight="900"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            letterSpacing="-0.02em"
+            fill="none"
+            stroke="rgba(255,255,255,0.25)"
+            strokeWidth="0.5"
+          />
+
+          {/* Top specular highlight */}
+          <text
+            x="50%"
+            y="55%"
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fontSize={fontSize}
+            fontWeight="900"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            letterSpacing="-0.02em"
+            fill="url(#glass-highlight)"
+          />
+
+          <defs>
+            <linearGradient id="glass-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.2)" />
+              <stop offset="30%" stopColor="rgba(255,255,255,0.05)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </motion.div>
     </div>
   );
 }
-
 // ============================================================================
 // LIQUID GLASS ORB — MAXIMUM LIQUID EFFECT
 // ============================================================================
