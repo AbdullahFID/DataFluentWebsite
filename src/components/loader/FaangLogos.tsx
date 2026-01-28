@@ -1,6 +1,7 @@
+// FaangLogos.tsx — Memoized logo components
 'use client';
 
-import { useId } from 'react';
+import { useId, memo } from 'react';
 
 export interface LogoProps {
   size?: number;
@@ -10,7 +11,7 @@ export interface LogoProps {
 /**
  * Google "G" mark (multicolor).
  */
-export function GoogleMark({ size = 64, className }: LogoProps) {
+export const GoogleMark = memo(function GoogleMark({ size = 64, className }: LogoProps) {
   const uidRaw = useId();
   const uid = uidRaw.replace(/[:]/g, '');
   const clipId = `google_clip_${uid}`;
@@ -56,12 +57,12 @@ export function GoogleMark({ size = 64, className }: LogoProps) {
       </g>
     </svg>
   );
-}
+});
 
 /**
  * Apple mark (logo-only).
  */
-export function AppleMark({ size = 56, className }: LogoProps) {
+export const AppleMark = memo(function AppleMark({ size = 56, className }: LogoProps) {
   return (
     <svg
       className={className}
@@ -78,12 +79,12 @@ export function AppleMark({ size = 56, className }: LogoProps) {
       />
     </svg>
   );
-}
+});
 
 /**
  * Meta infinity mark (logo-only).
  */
-export function MetaMark({ size = 58, className }: LogoProps) {
+export const MetaMark = memo(function MetaMark({ size = 58, className }: LogoProps) {
   return (
     <svg
       className={className}
@@ -104,12 +105,12 @@ export function MetaMark({ size = 58, className }: LogoProps) {
       />
     </svg>
   );
-}
+});
 
 /**
  * Microsoft tiles (logo-only).
  */
-export function MicrosoftMark({ size = 56, className }: LogoProps) {
+export const MicrosoftMark = memo(function MicrosoftMark({ size = 56, className }: LogoProps) {
   return (
     <svg
       className={className}
@@ -126,12 +127,12 @@ export function MicrosoftMark({ size = 56, className }: LogoProps) {
       <rect x="13" y="13" width="9" height="9" fill="#FFB900" />
     </svg>
   );
-}
+});
 
 /**
  * Tesla "T" mark (logo-only).
  */
-export function TeslaMark({ size = 58, className }: LogoProps) {
+export const TeslaMark = memo(function TeslaMark({ size = 58, className }: LogoProps) {
   return (
     <svg
       className={className}
@@ -152,12 +153,12 @@ export function TeslaMark({ size = 58, className }: LogoProps) {
       />
     </svg>
   );
-}
+});
 
 /**
  * Amazon icon-only (kept for compatibility)
  */
-export function AmazonMark({ size = 56, className }: LogoProps) {
+export const AmazonMark = memo(function AmazonMark({ size = 56, className }: LogoProps) {
   return (
     <svg
       className={className}
@@ -174,12 +175,12 @@ export function AmazonMark({ size = 56, className }: LogoProps) {
       />
     </svg>
   );
-}
+});
 
 /**
  * TikTok icon-only (kept for compatibility)
  */
-export function TikTokMark({ size = 56, className }: LogoProps) {
+export const TikTokMark = memo(function TikTokMark({ size = 56, className }: LogoProps) {
   return (
     <svg
       className={className}
@@ -196,7 +197,7 @@ export function TikTokMark({ size = 56, className }: LogoProps) {
       />
     </svg>
   );
-}
+});
 
 export const LOGO_COMPONENTS = {
   google: GoogleMark,

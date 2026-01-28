@@ -434,3 +434,9 @@ body {
 .hover-glow:hover {
   filter: drop-shadow(0 0 20px currentColor);
 }
+
+/* Remove focus outlines from orbs */
+.pointer-events-auto:focus,
+.pointer-events-auto:focus-visible {
+  outline: none;
+}
