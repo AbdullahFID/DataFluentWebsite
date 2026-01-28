@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MacBook Pro - Scroll Animation</title>
+  
+  <!-- Google's Model Viewer - The Easiest Way -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    /* ============================================
+       HERO SECTION
+       ============================================ */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: radial-gradient(ellipse at center, #1d1d1f 0%, #000 70%);
+      position: relative;
+    }
+    
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 8rem);
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      background: linear-gradient(180deg, #fff 20%, #666 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .hero .subtitle {
+      font-size: clamp(1rem, 3vw, 1.8rem);
+      color: #86868b;
+      margin-top: 0.5rem;
+    }
+    
+    .scroll-cta {
+      position: absolute;
+      bottom: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: #86868b;
+      font-size: 0.9rem;
+    }
+    
+    .scroll-cta .arrow {
+      width: 24px;
+      height: 24px;
+      border-right: 2px solid #86868b;
+      border-bottom: 2px solid #86868b;
+      transform: rotate(45deg);
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: rotate(45deg) translateY(0); }
+      40% { transform: rotate(45deg) translateY(10px); }
+    }
+    
+    /* ============================================
+       3D MODEL SECTION (THE MAIN EVENT)
+       ============================================ */
+    .model-section {
+      height: 350vh; /* Scroll distance */
+      position: relative;
+    }
+    
+    .model-container {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Model Viewer Styling */
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      --poster-color: transparent;
+    }
+    
+    model-viewer::part(default-progress-bar) {
+      display: none;
+    }
+    
+    /* ============================================
+       FEATURE CALLOUTS
+       ============================================ */
+    .features-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .feature {
+      position: absolute;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      max-width: 350px;
+    }
+    
+    .feature.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .feature h3 {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .feature p {
+      font-size: 1rem;
+      color: #86868b;
+      line-height: 1.5;
+    }
+    
+    .feature-1 { left: 8%; top: 25%; }
+    .feature-2 { right: 8%; top: 35%; }
+    .feature-3 { left: 8%; bottom: 25%; }
+    .feature-4 { right: 8%; bottom: 35%; }
+    
+    /* ============================================
+       PROGRESS & DEBUG
+       ============================================ */
+    .progress-track {
+      position: fixed;
+      right: 2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 200px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      z-index: 100;
+    }
+    
+    .progress-fill {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: linear-gradient(180deg, #2997ff, #5856d6);
+      border-radius: 2px;
+      transition: height 0.1s ease-out;
+    }
+    
+    .debug-info {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      padding: 0.75rem 1.5rem;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      color: #86868b;
+      z-index: 100;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* ============================================
+       FOOTER CTA
+       ============================================ */
+    .footer {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #000 0%, #1d1d1f 100%);
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .footer h2 {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .footer p {
+      color: #86868b;
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .cta-button {
+      padding: 1rem 2.5rem;
+      background: #2997ff;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .cta-button:hover {
+      background: #0077ed;
+      transform: scale(1.05);
+    }
+    
+    /* ============================================
+       INSTRUCTIONS PANEL
+       ============================================ */
+    .instructions {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      color: #86868b;
+      z-index: 100;
+      max-width: 300px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .instructions h4 {
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    
+    .instructions code {
+      background: rgba(255,255,255,0.1);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'SF Mono', monospace;
+    }
+    
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+      .feature { max-width: 200px; }
+      .feature-1, .feature-3 { left: 5%; }
+      .feature-2, .feature-4 { right: 5%; }
+      .instructions { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Instructions -->
+  <div class="instructions">
+    <h4>📋 How to use your own model:</h4>
+    <p>1. Download a MacBook GLB from <a href="https://sketchfab.com/tags/macbook" target="_blank" style="color:#2997ff">Sketchfab</a></p>
+    <p>2. Replace the <code>src</code> URL in model-viewer</p>
+    <p>3. Adjust camera orbit values</p>
+  </div>
+
+  <!-- Progress Indicator -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="height: 0%"></div>
+  </div>
+  
+  <!-- Debug Info -->
+  <div class="debug-info" id="debugInfo">
+    Scroll: 0% | Orbit: 0deg 75deg 105%
+  </div>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>MacBook Pro</h1>
+    <p class="subtitle">Mind-blowing. Head-turning.</p>
+    <div class="scroll-cta">
+      <span>Scroll to explore</span>
+      <div class="arrow"></div>
+    </div>
+  </section>
+
+  <!-- 3D Model Section -->
+  <section class="model-section" id="modelSection">
+    <div class="model-container">
+      
+      <!-- 
+        ============================================
+        MODEL-VIEWER: Google's 3D Web Component
+        ============================================
+        
+        This is the EASIEST way to show 3D models on the web.
+        
+        To use your own MacBook model:
+        1. Go to https://sketchfab.com/3d-models/macbook-pro-13-inch-2020-efab224280fd4c3993c808107f7c0b38
+        2. Download the GLB file
+        3. Host it (GitHub, Cloudflare R2, your server)
+        4. Replace the src URL below
+        
+        The 'camera-orbit' attribute controls the view:
+        - First value: horizontal rotation (theta)
+        - Second value: vertical rotation (phi) 
+        - Third value: distance (radius as %)
+      -->
+      <model-viewer
+        id="macbookModel"
+        src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+        alt="MacBook Pro 3D Model"
+        camera-orbit="0deg 75deg 105%"
+        camera-target="0m 0m 0m"
+        field-of-view="30deg"
+        min-camera-orbit="auto auto 50%"
+        max-camera-orbit="auto auto 200%"
+        exposure="1"
+        shadow-intensity="1"
+        shadow-softness="0.5"
+        environment-image="neutral"
+        interaction-prompt="none"
+        disable-zoom
+        disable-pan
+      >
+        <!-- Loading placeholder -->
+        <div slot="poster" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;color:#666;">
+            <div style="width:50px;height:50px;border:3px solid #333;border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>
+            Loading 3D Model...
+          </div>
+        </div>
+      </model-viewer>
+      
+      <!-- Feature Callouts -->
+      <div class="features-overlay">
+        <div class="feature feature-1" id="f1">
+          <h3>M4 Pro & M4 Max</h3>
+          <p>Up to 16-core CPU delivers incredible performance for demanding workflows.</p>
+        </div>
+        
+        <div class="feature feature-2" id="f2">
+          <h3>Liquid Retina XDR</h3>
+          <p>Extreme dynamic range with 1600 nits peak HDR brightness.</p>
+        </div>
+        
+        <div class="feature feature-3" id="f3">
+          <h3>Up to 24 Hours</h3>
+          <p>The longest battery life ever in a Mac. Go all day and into the night.</p>
+        </div>
+        
+        <div class="feature feature-4" id="f4">
+          <h3>Thunderbolt 5</h3>
+          <p>Transfer data at up to 120Gb/s. Connect multiple displays.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <section class="footer">
+    <h2>Ready to go Pro?</h2>
+    <p>Starting at $1,999</p>
+    <button class="cta-button">Buy MacBook Pro</button>
+  </section>
+
+  <script>
+    /**
+     * ============================================
+     * SCROLL-DRIVEN 3D ANIMATION
+     * ============================================
+     * 
+     * This script:
+     * 1. Tracks scroll position through the model section
+     * 2. Updates camera-orbit to rotate the model
+     * 3. Shows/hides feature callouts at key points
+     * 
+     * For a MacBook "lid opening" effect, you would need
+     * a model with an animated lid and control the
+     * animation-time based on scroll progress.
+     */
+    
+    const modelViewer = document.getElementById('macbookModel');
+    const modelSection = document.getElementById('modelSection');
+    const progressFill = document.getElementById('progressFill');
+    const debugInfo = document.getElementById('debugInfo');
+    
+    // Feature elements
+    const features = [
+      document.getElementById('f1'),
+      document.getElementById('f2'),
+      document.getElementById('f3'),
+      document.getElementById('f4'),
+    ];
+    
+    // Animation keyframes (what happens at each scroll %)
+    const ANIMATION_KEYFRAMES = {
+      // At 0%: Front view
+      0: { theta: 0, phi: 75, radius: 105 },
+      // At 25%: Rotate right
+      25: { theta: 45, phi: 70, radius: 100 },
+      // At 50%: Side view
+      50: { theta: 90, phi: 65, radius: 95 },
+      // At 75%: Rotate more
+      75: { theta: 135, phi: 60, radius: 90 },
+      // At 100%: Back to front
+      100: { theta: 180, phi: 75, radius: 105 },
+    };
+    
+    // Feature visibility (when each feature shows)
+    const FEATURE_TIMING = [
+      { start: 0.1, end: 0.3 },   // Feature 1
+      { start: 0.3, end: 0.5 },   // Feature 2
+      { start: 0.5, end: 0.7 },   // Feature 3
+      { start: 0.7, end: 0.9 },   // Feature 4
+    ];
+    
+    /**
+     * Linear interpolation between two values
+     */
+    function lerp(start, end, t) {
+      return start + (end - start) * t;
+    }
+    
+    /**
+     * Get interpolated camera orbit values for a given progress
+     */
+    function getOrbitAtProgress(progress) {
+      const percent = progress * 100;
+      const keys = Object.keys(ANIMATION_KEYFRAMES).map(Number).sort((a, b) => a - b);
+      
+      // Find the two keyframes we're between
+      let startKey = keys[0];
+      let endKey = keys[keys.length - 1];
+      
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (percent >= keys[i] && percent <= keys[i + 1]) {
+          startKey = keys[i];
+          endKey = keys[i + 1];
+          break;
+        }
+      }
+      
+      // Calculate local progress between these two keyframes
+      const range = endKey - startKey;
+      const localProgress = range > 0 ? (percent - startKey) / range : 0;
+      
+      const startOrbit = ANIMATION_KEYFRAMES[startKey];
+      const endOrbit = ANIMATION_KEYFRAMES[endKey];
+      
+      return {
+        theta: lerp(startOrbit.theta, endOrbit.theta, localProgress),
+        phi: lerp(startOrbit.phi, endOrbit.phi, localProgress),
+        radius: lerp(startOrbit.radius, endOrbit.radius, localProgress),
+      };
+    }
+    
+    /**
+     * Main scroll handler
+     */
+    function handleScroll() {
+      const rect = modelSection.getBoundingClientRect();
+      const sectionHeight = modelSection.offsetHeight;
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate progress through the section (0 to 1)
+      const scrollTop = -rect.top;
+      const scrollRange = sectionHeight - viewportHeight;
+      let progress = scrollTop / scrollRange;
+      progress = Math.max(0, Math.min(1, progress));
+      
+      // Update progress bar
+      progressFill.style.height = `${progress * 100}%`;
+      
+      // Get camera orbit for this progress
+      const orbit = getOrbitAtProgress(progress);
+      
+      // Apply to model-viewer
+      modelViewer.cameraOrbit = `${orbit.theta}deg ${orbit.phi}deg ${orbit.radius}%`;
+      
+      // Update debug info
+      debugInfo.textContent = 
+        `Scroll: ${Math.round(progress * 100)}% | ` +
+        `Orbit: ${Math.round(orbit.theta)}deg ${Math.round(orbit.phi)}deg ${Math.round(orbit.radius)}%`;
+      
+      // Update feature visibility
+      features.forEach((feature, index) => {
+        const timing = FEATURE_TIMING[index];
+        const isVisible = progress >= timing.start && progress <= timing.end;
+        feature.classList.toggle('visible', isVisible);
+      });
+    }
+    
+    // Throttled scroll listener
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+    
+    // Initial update
+    handleScroll();
+    
+    // Log when model loads
+    modelViewer.addEventListener('load', () => {
+      console.log('✅ Model loaded successfully!');
+      console.log('Model has animations:', modelViewer.availableAnimations);
+    });
+    
+    modelViewer.addEventListener('error', (e) => {
+      console.error('❌ Model failed to load:', e);
+    });
+  </script>
+
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</body>
+</html>

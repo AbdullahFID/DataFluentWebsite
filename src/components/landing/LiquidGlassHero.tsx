@@ -609,7 +609,7 @@ export function LiquidGlassHero() {
           ))}
         </div>
 
-        <ScrollIndicator scrollProgress={scrollYProgress} />
+        <ScrollIndicator scrollProgress={scrollYProgress} isMobile={isMobile} />
       </div>
     </section>
   );
@@ -1063,24 +1063,36 @@ function GlassSurfaceOrb({
 // ============================================================================
 // SCROLL INDICATOR
 // ============================================================================
-function ScrollIndicator({ scrollProgress }: { scrollProgress: MotionValue<number> }) {
+function ScrollIndicator({ 
+  scrollProgress, 
+  isMobile 
+}: { 
+  scrollProgress: MotionValue<number>;
+  isMobile: boolean;
+}) {
   const opacity = useTransform(scrollProgress, [0, 0.08], [1, 0]);
 
   return (
     <motion.div
-      className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-40"
+      className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 md:gap-2 z-40"
       style={{ opacity }}
     >
-      <span className="text-white/35 text-sm font-medium tracking-wide">Scroll to explore</span>
-      <motion.div className="w-6 h-10 rounded-full border-2 border-white/15 flex items-start justify-center p-2">
+      <span className="text-white/35 text-xs md:text-sm font-medium tracking-wide">
+        Scroll to explore
+      </span>
+      <motion.div 
+        className="w-5 h-8 md:w-6 md:h-10 rounded-full border-2 border-white/15 flex items-start justify-center p-1.5 md:p-2"
+      >
         <motion.div
-          className="w-1.5 h-1.5 rounded-full bg-white/45"
-          animate={{ y: [0, 14, 0], opacity: [1, 0.25, 1] }}
+          className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-white/45"
+          animate={{ 
+            y: [0, isMobile ? 10 : 14, 0], 
+            opacity: [1, 0.25, 1] 
+          }}
           transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
         />
       </motion.div>
     </motion.div>
   );
 }
-
 export default LiquidGlassHero;
