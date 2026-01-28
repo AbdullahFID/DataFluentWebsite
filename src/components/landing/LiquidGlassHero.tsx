@@ -35,9 +35,9 @@ const LIGHT_RAYS_CONFIG = {
 
 const SPRING_CONFIG = {
   pull: {
-    stiffness: 45,
-    damping: 26,
-    mass: 1.2,
+    stiffness: 35,
+    damping: 22,
+    mass: 1.4,
   },
   scale: {
     stiffness: 65,
@@ -140,11 +140,11 @@ function GooeyFilter({ id }: { id: string }) {
     <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
       <defs>
         <filter id={id}>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
           <feColorMatrix
             in="blur"
             mode="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -9"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8"
             result="gooey"
           />
           <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
@@ -252,11 +252,11 @@ export function LiquidGlassHero() {
 
   const { ref: textMeasureRef, size: textSize } = useElementSize<HTMLHeadingElement>();
 
-  // Slightly bigger orbs
+  // Scaled up orbs proportional to pill
   const orbSize = useMemo(() => {
-    if (!viewport.width) return isMobile ? 72 : 105;
-    const target = viewport.width * (isMobile ? 0.17 : 0.072);
-    return clamp(Math.round(target), isMobile ? 65 : 95, isMobile ? 80 : 115);
+    if (!viewport.width) return isMobile ? 78 : 115;
+    const target = viewport.width * (isMobile ? 0.18 : 0.078);
+    return clamp(Math.round(target), isMobile ? 70 : 105, isMobile ? 88 : 125);
   }, [viewport.width, isMobile]);
 
   const baseLogoSize = Math.round(orbSize * 0.52);
@@ -266,37 +266,37 @@ export function LiquidGlassHero() {
   const baseTextW = textSize.width || fallbackTextW;
   const baseTextH = textSize.height || fallbackTextH;
 
-  // Pill padding - longer width like reference
-  const padX = isMobile ? 24 : 44;
-  const padY = isMobile ? 16 : 22;
+  // Pill padding - scaled up proportionally
+  const padX = isMobile ? 28 : 52;
+  const padY = isMobile ? 18 : 26;
 
   const maxPillWidth = useMemo(() => {
-    if (!viewport.width) return isMobile ? 380 : 580;
-    return isMobile ? viewport.width - 40 : Math.min(640, viewport.width - 200);
+    if (!viewport.width) return isMobile ? 420 : 640;
+    return isMobile ? viewport.width - 36 : Math.min(700, viewport.width - 180);
   }, [viewport.width, isMobile]);
 
   const pillWidth = clamp(
     Math.round(baseTextW + padX * 2),
-    isMobile ? 220 : 400,
+    isMobile ? 240 : 440,
     maxPillWidth
   );
 
-  // Taller pill height
+  // Taller pill height - scaled up
   const pillHeight = clamp(
     Math.round(baseTextH + padY * 2),
-    isMobile ? 64 : 84,
-    isMobile ? 80 : 105
+    isMobile ? 70 : 92,
+    isMobile ? 88 : 115
   );
 
-  // More equal spacing layout
+  // Proportional spacing layout
   const layout = useMemo(() => {
-    const gapFromPill = isMobile ? 22 : 32;
+    const gapFromPill = isMobile ? 18 : 28;
     const row1Y = pillHeight / 2 + gapFromPill + orbSize / 2;
-    const row2Y = row1Y + orbSize * (isMobile ? 1.0 : 1.05);
+    const row2Y = row1Y + orbSize * (isMobile ? 0.95 : 1.0);
 
-    // Horizontal spacing
-    const stepX = orbSize * (isMobile ? 1.95 : 2.2);
-    const row2X = stepX * 0.55;
+    // Proportional horizontal spacing
+    const stepX = orbSize * (isMobile ? 1.85 : 2.1);
+    const row2X = stepX * 0.54;
 
     const bySlot: Record<Slot, { x: number; y: number }> = {
       topLeft: { x: -stepX, y: row1Y },
@@ -377,8 +377,7 @@ export function LiquidGlassHero() {
               scale: pillScale,
               opacity: pillOpacity,
               y: pillY,
-              background: 'transparent',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(8, 8, 12, 0.95)',
             }}
           />
 
@@ -641,22 +640,23 @@ function GooeyBlob({
   targetY: number;
   viewportWidth: number;
 }) {
-  const staggerDelay = index * 0.035;
-  const startAt = 0.17 + staggerDelay;
-  const stretchAt = startAt + 0.06;
-  const settleAt = startAt + 0.16;
+  const staggerDelay = index * 0.03;
+  const startAt = 0.15 + staggerDelay;
+  const stretchAt = startAt + 0.08;
+  const settleAt = startAt + 0.18;
 
-  const startY = pillHeight / 2 - orbSize * 0.35;
+  // Start inside/at the pill edge for gooey emergence
+  const startY = pillHeight * 0.3;
 
   const rawX = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
-    [0, 0, targetX * 0.15, targetX * 0.5, targetX * 1.04, targetX]
+    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
+    [0, 0, targetX * 0.1, targetX * 0.45, targetX * 1.02, targetX]
   );
   const rawY = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
-    [0, startY * 0.3, startY * 0.6, targetY * 0.5, targetY * 1.04, targetY]
+    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
+    [0, startY * 0.2, startY * 0.5, targetY * 0.5, targetY * 1.02, targetY]
   );
 
   const xSpring = useSpring(rawX, SPRING_CONFIG.pull);
@@ -676,7 +676,7 @@ function GooeyBlob({
   const maxX = viewportWidth > 0 ? Math.max(0, viewportWidth / 2 - orbSize / 2 - safePad) : 9999;
   const x = useTransform(xWithFloat, (v) => clamp(v, -maxX, maxX));
 
-  const opacity = useTransform(scrollProgress, [startAt, startAt + 0.04], [0, 1]);
+  const opacity = useTransform(scrollProgress, [startAt - 0.02, startAt + 0.02], [0, 1]);
 
   return (
     <motion.div
@@ -689,9 +689,7 @@ function GooeyBlob({
         opacity,
         translateX: '-50%',
         translateY: '-50%',
-        background: 'transparent',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: 'inset 0 0 20px rgba(255,255,255,0.03)',
+        background: 'rgba(8, 8, 12, 0.95)',
       }}
     />
   );
@@ -795,22 +793,23 @@ function GlassSurfaceOrb({
   const Logo = LOGO_COMPONENTS[config.id];
   const [isHovered, setIsHovered] = useState(false);
 
-  const staggerDelay = index * 0.035;
-  const startAt = 0.17 + staggerDelay;
-  const stretchAt = startAt + 0.06;
-  const settleAt = startAt + 0.16;
+  const staggerDelay = index * 0.03;
+  const startAt = 0.15 + staggerDelay;
+  const stretchAt = startAt + 0.08;
+  const settleAt = startAt + 0.18;
 
-  const startY = pillHeight / 2 - orbSize * 0.35;
+  // Start inside/at the pill edge for gooey emergence
+  const startY = pillHeight * 0.3;
 
   const rawX = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
-    [0, 0, targetX * 0.15, targetX * 0.5, targetX * 1.04, targetX]
+    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
+    [0, 0, targetX * 0.1, targetX * 0.45, targetX * 1.02, targetX]
   );
   const rawY = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
-    [0, startY * 0.3, startY * 0.6, targetY * 0.5, targetY * 1.04, targetY]
+    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
+    [0, startY * 0.2, startY * 0.5, targetY * 0.5, targetY * 1.02, targetY]
   );
 
   const xSpring = useSpring(rawX, SPRING_CONFIG.pull);
@@ -830,7 +829,7 @@ function GlassSurfaceOrb({
   const maxX = viewportWidth > 0 ? Math.max(0, viewportWidth / 2 - orbSize / 2 - safePad) : 9999;
   const x = useTransform(xWithFloat, (v) => clamp(v, -maxX, maxX));
 
-  const opacity = useTransform(scrollProgress, [settleAt - 0.01, settleAt + 0.04], [0, 1]);
+  const opacity = useTransform(scrollProgress, [settleAt - 0.02, settleAt + 0.03], [0, 1]);
   const popScale = useTransform(scrollProgress, [settleAt - 0.03, settleAt, settleAt + 0.04], [0.85, 1.03, 1]);
   const scale = useSpring(popScale, SPRING_CONFIG.scale);
 
@@ -935,57 +934,83 @@ function GlassSurfaceOrb({
           }}
         />
 
-        {/* ========== TOP CURVED SHINE (not a dot) ========== */}
+        {/* ========== TOP EDGE SHIMMER - curved rim shine ========== */}
         <div
           className="absolute pointer-events-none z-20"
           style={{
-            width: '60%',
-            height: '30%',
-            top: '3%',
-            left: '20%',
+            width: '80%',
+            height: '50%',
+            top: '0%',
+            left: '10%',
             background: `
-              radial-gradient(ellipse 100% 60% at 50% 0%,
+              radial-gradient(ellipse 100% 40% at 50% 0%,
                 rgba(255, 255, 255, 0.35) 0%,
-                rgba(255, 255, 255, 0.15) 30%,
+                rgba(255, 255, 255, 0.15) 40%,
                 transparent 70%
               )
             `,
             borderRadius: '50%',
-            filter: 'blur(3px)',
+            filter: 'blur(1px)',
           }}
         />
 
-        {/* ========== THIN TOP EDGE HIGHLIGHT LINE ========== */}
+        {/* ========== BOTTOM EDGE SHIMMER - curved rim shine ========== */}
         <div
           className="absolute pointer-events-none z-20"
           style={{
-            width: '50%',
-            height: '2px',
-            top: '8%',
-            left: '25%',
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 30%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.4) 70%, transparent 100%)',
-            borderRadius: '50%',
-            filter: 'blur(0.5px)',
-          }}
-        />
-
-        {/* ========== BOTTOM RIM LIGHT - subtle ========== */}
-        <div
-          className="absolute pointer-events-none z-20"
-          style={{
-            width: '45%',
-            height: '15%',
-            bottom: '10%',
-            left: '27.5%',
+            width: '75%',
+            height: '45%',
+            bottom: '0%',
+            left: '12.5%',
             background: `
-              radial-gradient(ellipse 100% 80% at 50% 100%,
-                rgba(255, 255, 255, 0.08) 0%,
-                rgba(255, 255, 255, 0.02) 60%,
-                transparent 100%
+              radial-gradient(ellipse 100% 40% at 50% 100%,
+                rgba(255, 255, 255, 0.25) 0%,
+                rgba(255, 255, 255, 0.1) 40%,
+                transparent 70%
               )
             `,
             borderRadius: '50%',
-            filter: 'blur(2px)',
+            filter: 'blur(1px)',
+          }}
+        />
+
+        {/* ========== LEFT EDGE SHIMMER ========== */}
+        <div
+          className="absolute pointer-events-none z-20"
+          style={{
+            width: '40%',
+            height: '70%',
+            top: '15%',
+            left: '0%',
+            background: `
+              radial-gradient(ellipse 40% 100% at 0% 50%,
+                rgba(255, 255, 255, 0.12) 0%,
+                rgba(255, 255, 255, 0.04) 50%,
+                transparent 80%
+              )
+            `,
+            borderRadius: '50%',
+            filter: 'blur(1px)',
+          }}
+        />
+
+        {/* ========== RIGHT EDGE SHIMMER ========== */}
+        <div
+          className="absolute pointer-events-none z-20"
+          style={{
+            width: '40%',
+            height: '70%',
+            top: '15%',
+            right: '0%',
+            background: `
+              radial-gradient(ellipse 40% 100% at 100% 50%,
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0.03) 50%,
+                transparent 80%
+              )
+            `,
+            borderRadius: '50%',
+            filter: 'blur(1px)',
           }}
         />
 
