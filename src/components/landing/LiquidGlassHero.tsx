@@ -35,9 +35,9 @@ const LIGHT_RAYS_CONFIG = {
 
 const SPRING_CONFIG = {
   pull: {
-    stiffness: 35,
-    damping: 22,
-    mass: 1.4,
+    stiffness: 45,
+    damping: 26,
+    mass: 1.2,
   },
   scale: {
     stiffness: 65,
@@ -140,11 +140,11 @@ function GooeyFilter({ id }: { id: string }) {
     <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
       <defs>
         <filter id={id}>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
           <feColorMatrix
             in="blur"
             mode="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -9"
             result="gooey"
           />
           <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
@@ -252,11 +252,11 @@ export function LiquidGlassHero() {
 
   const { ref: textMeasureRef, size: textSize } = useElementSize<HTMLHeadingElement>();
 
-  // Scaled up orbs proportional to pill
+  // Slightly bigger orbs
   const orbSize = useMemo(() => {
-    if (!viewport.width) return isMobile ? 78 : 115;
-    const target = viewport.width * (isMobile ? 0.18 : 0.078);
-    return clamp(Math.round(target), isMobile ? 70 : 105, isMobile ? 88 : 125);
+    if (!viewport.width) return isMobile ? 72 : 105;
+    const target = viewport.width * (isMobile ? 0.17 : 0.072);
+    return clamp(Math.round(target), isMobile ? 65 : 95, isMobile ? 80 : 115);
   }, [viewport.width, isMobile]);
 
   const baseLogoSize = Math.round(orbSize * 0.52);
@@ -266,37 +266,37 @@ export function LiquidGlassHero() {
   const baseTextW = textSize.width || fallbackTextW;
   const baseTextH = textSize.height || fallbackTextH;
 
-  // Pill padding - scaled up proportionally
-  const padX = isMobile ? 28 : 52;
-  const padY = isMobile ? 18 : 26;
+  // Pill padding - longer width like reference
+  const padX = isMobile ? 24 : 44;
+  const padY = isMobile ? 16 : 22;
 
   const maxPillWidth = useMemo(() => {
-    if (!viewport.width) return isMobile ? 420 : 640;
-    return isMobile ? viewport.width - 36 : Math.min(700, viewport.width - 180);
+    if (!viewport.width) return isMobile ? 380 : 580;
+    return isMobile ? viewport.width - 40 : Math.min(640, viewport.width - 200);
   }, [viewport.width, isMobile]);
 
   const pillWidth = clamp(
     Math.round(baseTextW + padX * 2),
-    isMobile ? 240 : 440,
+    isMobile ? 220 : 400,
     maxPillWidth
   );
 
-  // Taller pill height - scaled up
+  // Taller pill height
   const pillHeight = clamp(
     Math.round(baseTextH + padY * 2),
-    isMobile ? 70 : 92,
-    isMobile ? 88 : 115
+    isMobile ? 64 : 84,
+    isMobile ? 80 : 105
   );
 
-  // Proportional spacing layout
+  // More equal spacing layout
   const layout = useMemo(() => {
-    const gapFromPill = isMobile ? 18 : 28;
+    const gapFromPill = isMobile ? 22 : 32;
     const row1Y = pillHeight / 2 + gapFromPill + orbSize / 2;
-    const row2Y = row1Y + orbSize * (isMobile ? 0.95 : 1.0);
+    const row2Y = row1Y + orbSize * (isMobile ? 1.0 : 1.05);
 
-    // Proportional horizontal spacing
-    const stepX = orbSize * (isMobile ? 1.85 : 2.1);
-    const row2X = stepX * 0.54;
+    // Horizontal spacing
+    const stepX = orbSize * (isMobile ? 1.95 : 2.2);
+    const row2X = stepX * 0.55;
 
     const bySlot: Record<Slot, { x: number; y: number }> = {
       topLeft: { x: -stepX, y: row1Y },
@@ -377,7 +377,8 @@ export function LiquidGlassHero() {
               scale: pillScale,
               opacity: pillOpacity,
               y: pillY,
-              background: 'rgba(8, 8, 12, 0.95)',
+              background: 'rgba(20, 20, 25, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           />
 
@@ -640,23 +641,22 @@ function GooeyBlob({
   targetY: number;
   viewportWidth: number;
 }) {
-  const staggerDelay = index * 0.03;
-  const startAt = 0.15 + staggerDelay;
-  const stretchAt = startAt + 0.08;
-  const settleAt = startAt + 0.18;
+  const staggerDelay = index * 0.035;
+  const startAt = 0.17 + staggerDelay;
+  const stretchAt = startAt + 0.06;
+  const settleAt = startAt + 0.16;
 
-  // Start inside/at the pill edge for gooey emergence
-  const startY = pillHeight * 0.3;
+  const startY = pillHeight / 2 - orbSize * 0.35;
 
   const rawX = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
-    [0, 0, targetX * 0.1, targetX * 0.45, targetX * 1.02, targetX]
+    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
+    [0, 0, targetX * 0.15, targetX * 0.5, targetX * 1.04, targetX]
   );
   const rawY = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
-    [0, startY * 0.2, startY * 0.5, targetY * 0.5, targetY * 1.02, targetY]
+    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
+    [0, startY * 0.3, startY * 0.6, targetY * 0.5, targetY * 1.04, targetY]
   );
 
   const xSpring = useSpring(rawX, SPRING_CONFIG.pull);
@@ -676,7 +676,7 @@ function GooeyBlob({
   const maxX = viewportWidth > 0 ? Math.max(0, viewportWidth / 2 - orbSize / 2 - safePad) : 9999;
   const x = useTransform(xWithFloat, (v) => clamp(v, -maxX, maxX));
 
-  const opacity = useTransform(scrollProgress, [startAt - 0.02, startAt + 0.02], [0, 1]);
+  const opacity = useTransform(scrollProgress, [startAt, startAt + 0.04], [0, 1]);
 
   return (
     <motion.div
@@ -689,7 +689,8 @@ function GooeyBlob({
         opacity,
         translateX: '-50%',
         translateY: '-50%',
-        background: 'rgba(8, 8, 12, 0.95)',
+        background: 'rgba(20, 20, 25, 0.85)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
       }}
     />
   );
@@ -793,23 +794,22 @@ function GlassSurfaceOrb({
   const Logo = LOGO_COMPONENTS[config.id];
   const [isHovered, setIsHovered] = useState(false);
 
-  const staggerDelay = index * 0.03;
-  const startAt = 0.15 + staggerDelay;
-  const stretchAt = startAt + 0.08;
-  const settleAt = startAt + 0.18;
+  const staggerDelay = index * 0.035;
+  const startAt = 0.17 + staggerDelay;
+  const stretchAt = startAt + 0.06;
+  const settleAt = startAt + 0.16;
 
-  // Start inside/at the pill edge for gooey emergence
-  const startY = pillHeight * 0.3;
+  const startY = pillHeight / 2 - orbSize * 0.35;
 
   const rawX = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
-    [0, 0, targetX * 0.1, targetX * 0.45, targetX * 1.02, targetX]
+    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
+    [0, 0, targetX * 0.15, targetX * 0.5, targetX * 1.04, targetX]
   );
   const rawY = useTransform(
     scrollProgress,
-    [0, startAt, startAt + 0.03, stretchAt, stretchAt + 0.04, settleAt],
-    [0, startY * 0.2, startY * 0.5, targetY * 0.5, targetY * 1.02, targetY]
+    [0, startAt, startAt + 0.025, stretchAt, stretchAt + 0.03, settleAt],
+    [0, startY * 0.3, startY * 0.6, targetY * 0.5, targetY * 1.04, targetY]
   );
 
   const xSpring = useSpring(rawX, SPRING_CONFIG.pull);
@@ -829,7 +829,7 @@ function GlassSurfaceOrb({
   const maxX = viewportWidth > 0 ? Math.max(0, viewportWidth / 2 - orbSize / 2 - safePad) : 9999;
   const x = useTransform(xWithFloat, (v) => clamp(v, -maxX, maxX));
 
-  const opacity = useTransform(scrollProgress, [settleAt - 0.02, settleAt + 0.03], [0, 1]);
+  const opacity = useTransform(scrollProgress, [settleAt - 0.01, settleAt + 0.04], [0, 1]);
   const popScale = useTransform(scrollProgress, [settleAt - 0.03, settleAt, settleAt + 0.04], [0.85, 1.03, 1]);
   const scale = useSpring(popScale, SPRING_CONFIG.scale);
 
