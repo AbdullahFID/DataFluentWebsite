@@ -7,9 +7,9 @@ export { DecryptedText } from './DecryptedText';
 export { RotatingText } from './RotatingText';
 export { LOGO_COMPONENTS } from './FaangLogos';
 export {
-  GoogleLogo,
-  AppleLogo,
-  MetaLogo,
-  MicrosoftLogo,
-  AmazonLogo,
+  GoogleMark as GoogleLogo,
+  AppleMark as AppleLogo,
+  MetaMark as MetaLogo,
+  MicrosoftMark as MicrosoftLogo,
+  AmazonMark as AmazonLogo,
 } from './FaangLogos';
