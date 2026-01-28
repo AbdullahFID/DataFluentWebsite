@@ -266,35 +266,35 @@ export function LiquidGlassHero() {
   const baseTextW = textSize.width || fallbackTextW;
   const baseTextH = textSize.height || fallbackTextH;
 
-  // Pill padding - much shorter width, taller height
-  const padX = isMobile ? 4 : 6;
+  // Pill padding - longer width like reference
+  const padX = isMobile ? 24 : 44;
   const padY = isMobile ? 16 : 22;
 
   const maxPillWidth = useMemo(() => {
-    if (!viewport.width) return isMobile ? 240 : 420;
-    return isMobile ? viewport.width - 60 : Math.min(450, viewport.width - 300);
+    if (!viewport.width) return isMobile ? 380 : 580;
+    return isMobile ? viewport.width - 40 : Math.min(640, viewport.width - 200);
   }, [viewport.width, isMobile]);
 
   const pillWidth = clamp(
     Math.round(baseTextW + padX * 2),
-    isMobile ? 160 : 280,
+    isMobile ? 220 : 400,
     maxPillWidth
   );
 
   // Taller pill height
   const pillHeight = clamp(
     Math.round(baseTextH + padY * 2),
-    isMobile ? 68 : 90,
-    isMobile ? 82 : 110
+    isMobile ? 64 : 84,
+    isMobile ? 80 : 105
   );
 
-  // Tighter proportional spacing layout
+  // More equal spacing layout
   const layout = useMemo(() => {
-    const gapFromPill = isMobile ? 16 : 22;
+    const gapFromPill = isMobile ? 22 : 32;
     const row1Y = pillHeight / 2 + gapFromPill + orbSize / 2;
     const row2Y = row1Y + orbSize * (isMobile ? 1.0 : 1.05);
 
-    // Slightly tighter horizontal spacing
+    // Horizontal spacing
     const stepX = orbSize * (isMobile ? 1.95 : 2.2);
     const row2X = stepX * 0.55;
 
@@ -404,20 +404,20 @@ export function LiquidGlassHero() {
           {/* Glass Pill using GlassSurface with highlight effects */}
           <motion.div className="absolute" style={{ scale: pillScale, opacity: pillOpacity, y: pillY }}>
             <div className="relative" style={{ width: pillWidth, height: pillHeight }}>
-            {/* Outer glow */}
+            {/* Outer glow - subtle */}
             <div
               className="absolute rounded-full pointer-events-none"
               style={{
                 inset: -4,
                 background: 'transparent',
                 boxShadow: `
-                  0 0 30px rgba(255, 255, 255, 0.08),
-                  0 0 60px rgba(255, 255, 255, 0.04)
+                  0 0 20px rgba(255, 255, 255, 0.05),
+                  0 0 40px rgba(255, 255, 255, 0.02)
                 `,
               }}
             />
             
-            {/* Top highlight arc - the main glass reflection */}
+            {/* Top highlight arc - very subtle for clearer text */}
             <div
               className="absolute pointer-events-none z-20"
               style={{
@@ -427,9 +427,9 @@ export function LiquidGlassHero() {
                 left: '7.5%',
                 background: `
                   radial-gradient(ellipse 100% 70% at 50% 0%,
-                    rgba(255, 255, 255, 0.5) 0%,
-                    rgba(255, 255, 255, 0.25) 20%,
-                    rgba(255, 255, 255, 0.08) 45%,
+                    rgba(255, 255, 255, 0.2) 0%,
+                    rgba(255, 255, 255, 0.08) 20%,
+                    rgba(255, 255, 255, 0.02) 45%,
                     transparent 70%
                   )
                 `,
@@ -438,7 +438,7 @@ export function LiquidGlassHero() {
               }}
             />
 
-            {/* Sharp top edge highlight line */}
+            {/* Sharp top edge highlight line - very subtle */}
             <div
               className="absolute pointer-events-none z-20"
               style={{
@@ -446,13 +446,13 @@ export function LiquidGlassHero() {
                 height: '2px',
                 top: '6%',
                 left: '15%',
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 20%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.6) 80%, transparent 100%)',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 20%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.3) 80%, transparent 100%)',
                 borderRadius: '9999px',
                 filter: 'blur(0.5px)',
               }}
             />
 
-            {/* Secondary softer highlight */}
+            {/* Secondary softer highlight - minimal */}
             <div
               className="absolute pointer-events-none z-20"
               style={{
@@ -460,13 +460,13 @@ export function LiquidGlassHero() {
                 height: '20%',
                 top: '8%',
                 left: '25%',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%)',
                 borderRadius: '9999px',
                 filter: 'blur(6px)',
               }}
             />
 
-            {/* Glass rim - left edge */}
+            {/* Glass rim - left edge - subtle */}
             <div
               className="absolute pointer-events-none z-20"
               style={{
@@ -476,8 +476,8 @@ export function LiquidGlassHero() {
                 left: '0%',
                 background: `
                   linear-gradient(90deg,
-                    rgba(255, 255, 255, 0.15) 0%,
-                    rgba(255, 255, 255, 0.05) 50%,
+                    rgba(255, 255, 255, 0.1) 0%,
+                    rgba(255, 255, 255, 0.03) 50%,
                     transparent 100%
                   )
                 `,
@@ -486,7 +486,7 @@ export function LiquidGlassHero() {
               }}
             />
 
-            {/* Glass rim - right edge */}
+            {/* Glass rim - right edge - subtle */}
             <div
               className="absolute pointer-events-none z-20"
               style={{
@@ -496,8 +496,8 @@ export function LiquidGlassHero() {
                 right: '0%',
                 background: `
                   linear-gradient(270deg,
-                    rgba(255, 255, 255, 0.15) 0%,
-                    rgba(255, 255, 255, 0.05) 50%,
+                    rgba(255, 255, 255, 0.1) 0%,
+                    rgba(255, 255, 255, 0.03) 50%,
                     transparent 100%
                   )
                 `,
@@ -506,7 +506,7 @@ export function LiquidGlassHero() {
               }}
             />
 
-            {/* Bottom subtle rim reflection */}
+            {/* Bottom subtle rim reflection - minimal */}
             <div
               className="absolute pointer-events-none z-20"
               style={{
@@ -516,8 +516,8 @@ export function LiquidGlassHero() {
                 left: '20%',
                 background: `
                   radial-gradient(ellipse 100% 80% at 50% 100%,
-                    rgba(255, 255, 255, 0.1) 0%,
-                    rgba(255, 255, 255, 0.03) 50%,
+                    rgba(255, 255, 255, 0.06) 0%,
+                    rgba(255, 255, 255, 0.02) 50%,
                     transparent 80%
                   )
                 `,
@@ -526,39 +526,59 @@ export function LiquidGlassHero() {
               }}
             />
 
-            {/* Prismatic edge effect for pill */}
+            {/* Prismatic edge effect for pill - subtle */}
             <div
               className="absolute inset-0 rounded-full pointer-events-none z-10"
               style={{
                 background: `
                   linear-gradient(90deg,
-                    rgba(255, 100, 100, 0.08) 0%,
-                    rgba(255, 200, 100, 0.05) 15%,
+                    rgba(255, 100, 100, 0.04) 0%,
+                    rgba(255, 200, 100, 0.02) 15%,
                     transparent 25%,
                     transparent 75%,
-                    rgba(100, 200, 255, 0.05) 85%,
-                    rgba(100, 100, 255, 0.08) 100%
+                    rgba(100, 200, 255, 0.02) 85%,
+                    rgba(100, 100, 255, 0.04) 100%
                   )
                 `,
               }}
             />
 
-            {/* The actual GlassSurface with stronger chromatic */}
+            {/* Inner chamfer/crease edge - more visible */}
+            <div
+              className="absolute rounded-full pointer-events-none z-15"
+              style={{
+                inset: 4,
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                boxShadow: `
+                  0 0 2px rgba(255, 255, 255, 0.1)
+                `,
+              }}
+            />
+
+            {/* Outer border ring */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none z-15"
+              style={{
+                border: '1.5px solid rgba(255, 255, 255, 0.18)',
+              }}
+            />
+
+            {/* The actual GlassSurface - minimal effect for clearer text */}
             <GlassSurface
               width={pillWidth}
               height={pillHeight}
               borderRadius={9999}
-              distortionScale={isMobile ? -140 : -200}
-              redOffset={isMobile ? -2 : -4}
-              greenOffset={isMobile ? 8 : 12}
-              blueOffset={isMobile ? 16 : 24}
-              brightness={50}
-              opacity={0.95}
-              blur={isMobile ? 10 : 12}
-              displace={0.6}
+              distortionScale={isMobile ? -50 : -80}
+              redOffset={isMobile ? 0 : -1}
+              greenOffset={isMobile ? 2 : 4}
+              blueOffset={isMobile ? 5 : 8}
+              brightness={60}
+              opacity={0.85}
+              blur={isMobile ? 4 : 6}
+              displace={0.3}
               backgroundOpacity={0}
-              saturation={1.3}
-              borderWidth={0.08}
+              saturation={1.05}
+              borderWidth={0.06}
               mixBlendMode="screen"
             />
             </div>
@@ -851,47 +871,47 @@ function GlassSurfaceOrb({
       {/* Glass bubble orb with chromatic refractive edges */}
       <div className="relative cursor-pointer" style={{ width: orbSize, height: orbSize }}>
         
-        {/* ========== THE GLASS SURFACE COMPONENT (base layer with strong chromatic) ========== */}
+        {/* ========== THE GLASS SURFACE COMPONENT (base layer) ========== */}
         <GlassSurface
           width={orbSize}
           height={orbSize}
           borderRadius={9999}
-          distortionScale={isMobile ? -160 : -220}
-          redOffset={isMobile ? -2 : -4}
-          greenOffset={isMobile ? 8 : 14}
-          blueOffset={isMobile ? 18 : 28}
-          brightness={50}
-          opacity={0.95}
-          blur={isMobile ? 10 : 12}
-          displace={0.6}
+          distortionScale={isMobile ? -120 : -160}
+          redOffset={isMobile ? -1 : -2}
+          greenOffset={isMobile ? 5 : 8}
+          blueOffset={isMobile ? 12 : 18}
+          brightness={55}
+          opacity={0.9}
+          blur={isMobile ? 8 : 10}
+          displace={0.5}
           backgroundOpacity={0}
-          saturation={1.3}
-          borderWidth={0.09}
+          saturation={1.15}
+          borderWidth={0.07}
           mixBlendMode="screen"
         />
 
-        {/* ========== PRISMATIC EDGE RING - The key refractive effect ========== */}
+        {/* ========== PRISMATIC EDGE RING - subtle refractive effect ========== */}
         <div
           className="absolute inset-0 rounded-full pointer-events-none z-10"
           style={{
             background: `
               conic-gradient(
                 from 120deg at 50% 50%,
-                rgba(255, 80, 80, 0.12) 0deg,
-                rgba(255, 160, 80, 0.1) 30deg,
-                rgba(255, 255, 100, 0.08) 60deg,
-                rgba(100, 255, 100, 0.08) 90deg,
-                rgba(80, 200, 255, 0.1) 120deg,
-                rgba(100, 100, 255, 0.12) 150deg,
-                rgba(180, 80, 255, 0.1) 180deg,
-                rgba(255, 80, 180, 0.08) 210deg,
-                rgba(255, 80, 80, 0.06) 240deg,
+                rgba(255, 80, 80, 0.06) 0deg,
+                rgba(255, 160, 80, 0.05) 30deg,
+                rgba(255, 255, 100, 0.04) 60deg,
+                rgba(100, 255, 100, 0.04) 90deg,
+                rgba(80, 200, 255, 0.05) 120deg,
+                rgba(100, 100, 255, 0.06) 150deg,
+                rgba(180, 80, 255, 0.05) 180deg,
+                rgba(255, 80, 180, 0.04) 210deg,
+                rgba(255, 80, 80, 0.03) 240deg,
                 transparent 270deg,
                 transparent 360deg
               )
             `,
-            mask: 'radial-gradient(circle, transparent 65%, black 75%, black 100%)',
-            WebkitMask: 'radial-gradient(circle, transparent 65%, black 75%, black 100%)',
+            mask: 'radial-gradient(circle, transparent 70%, black 80%, black 100%)',
+            WebkitMask: 'radial-gradient(circle, transparent 70%, black 80%, black 100%)',
           }}
         />
 
@@ -902,71 +922,65 @@ function GlassSurfaceOrb({
             background: `
               conic-gradient(
                 from 240deg at 50% 50%,
-                rgba(100, 200, 255, 0.08) 0deg,
-                rgba(150, 100, 255, 0.06) 45deg,
-                rgba(255, 100, 150, 0.06) 90deg,
-                rgba(255, 200, 100, 0.05) 135deg,
+                rgba(100, 200, 255, 0.04) 0deg,
+                rgba(150, 100, 255, 0.03) 45deg,
+                rgba(255, 100, 150, 0.03) 90deg,
+                rgba(255, 200, 100, 0.025) 135deg,
                 transparent 180deg,
                 transparent 360deg
               )
             `,
-            mask: 'radial-gradient(circle, transparent 70%, black 82%, transparent 95%)',
-            WebkitMask: 'radial-gradient(circle, transparent 70%, black 82%, transparent 95%)',
+            mask: 'radial-gradient(circle, transparent 75%, black 85%, transparent 95%)',
+            WebkitMask: 'radial-gradient(circle, transparent 75%, black 85%, transparent 95%)',
           }}
         />
 
-        {/* ========== TOP SPECULAR HIGHLIGHT ========== */}
+        {/* ========== TOP CURVED SHINE (not a dot) ========== */}
         <div
           className="absolute pointer-events-none z-20"
           style={{
-            width: '70%',
-            height: '40%',
-            top: '4%',
-            left: '15%',
+            width: '60%',
+            height: '30%',
+            top: '3%',
+            left: '20%',
             background: `
-              radial-gradient(ellipse 100% 80% at 50% 0%,
-                rgba(255, 255, 255, 0.5) 0%,
-                rgba(255, 255, 255, 0.25) 20%,
-                rgba(255, 255, 255, 0.08) 45%,
+              radial-gradient(ellipse 100% 60% at 50% 0%,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.15) 30%,
                 transparent 70%
               )
             `,
             borderRadius: '50%',
-            filter: 'blur(2px)',
+            filter: 'blur(3px)',
           }}
         />
 
-        {/* ========== SHARP SPECULAR POINT ========== */}
-        <div
-          className="absolute pointer-events-none z-20"
-          style={{
-            width: '20%',
-            height: '20%',
-            top: '10%',
-            left: '22%',
-            background: `
-              radial-gradient(circle at 50% 50%,
-                rgba(255, 255, 255, 0.8) 0%,
-                rgba(255, 255, 255, 0.35) 40%,
-                transparent 70%
-              )
-            `,
-            borderRadius: '50%',
-          }}
-        />
-
-        {/* ========== BOTTOM RIM LIGHT ========== */}
+        {/* ========== THIN TOP EDGE HIGHLIGHT LINE ========== */}
         <div
           className="absolute pointer-events-none z-20"
           style={{
             width: '50%',
-            height: '20%',
-            bottom: '8%',
+            height: '2px',
+            top: '8%',
             left: '25%',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 30%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.4) 70%, transparent 100%)',
+            borderRadius: '50%',
+            filter: 'blur(0.5px)',
+          }}
+        />
+
+        {/* ========== BOTTOM RIM LIGHT - subtle ========== */}
+        <div
+          className="absolute pointer-events-none z-20"
+          style={{
+            width: '45%',
+            height: '15%',
+            bottom: '10%',
+            left: '27.5%',
             background: `
               radial-gradient(ellipse 100% 80% at 50% 100%,
-                rgba(255, 255, 255, 0.1) 0%,
-                rgba(255, 255, 255, 0.03) 60%,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.02) 60%,
                 transparent 100%
               )
             `,
@@ -979,9 +993,18 @@ function GlassSurfaceOrb({
         <div
           className="absolute inset-0 rounded-full pointer-events-none z-10"
           style={{
-            border: '1.5px solid rgba(255, 255, 255, 0.12)',
+            border: '1.5px solid rgba(255, 255, 255, 0.15)',
+          }}
+        />
+
+        {/* ========== INNER CHAMFER/CREASE EDGE - more visible ========== */}
+        <div
+          className="absolute rounded-full pointer-events-none z-10"
+          style={{
+            inset: 4,
+            border: '1px solid rgba(255, 255, 255, 0.18)',
             boxShadow: `
-              inset 0 1px 2px rgba(255, 255, 255, 0.08)
+              0 0 2px rgba(255, 255, 255, 0.1)
             `,
           }}
         />
