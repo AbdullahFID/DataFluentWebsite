@@ -83,7 +83,7 @@ const LOGO_TUNING: Record<
   Company,
   { mult: number; translateX?: number; translateY?: number }
 > = {
-  tesla: { mult: 1.15, translateX: 0, translateY: -2 },
+  tesla: { mult: 1.15, translateX: 0, translateY: 10 },
   microsoft: { mult: 1.05, translateX: 0, translateY: 0 },
   meta: { mult: 1.10, translateX: 0, translateY: 0 },
   apple: { mult: 1.12, translateX: 0, translateY: -1 },
@@ -637,7 +637,7 @@ function DatafluentText({
             direction="left"
           />
           <span
-            className="rounded-full flex-shrink-0"
+            className="rounded-full shrink-0"
             style={{
               width: isMobile ? 6 : 11,
               height: isMobile ? 6 : 11,
@@ -769,9 +769,11 @@ function TransparentGlassOrb({
         <div
           className="absolute inset-0 rounded-full overflow-hidden"
           style={{
-            backdropFilter: 'blur(6px) saturate(1.1) brightness(1.05)',
-            WebkitBackdropFilter: 'blur(6px) saturate(1.1) brightness(1.05)',
-            background: 'radial-gradient(circle at 30% 25%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 60%, transparent 100%)',
+            backdropFilter: 'blur(2px) saturate(1.0) brightness(1.02)',
+WebkitBackdropFilter: 'blur(2px) saturate(1.0) brightness(1.02)',
+background:
+  'radial-gradient(circle at 30% 25%, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.010) 60%, transparent 100%)',
+
           }}
         />
 
@@ -779,11 +781,12 @@ function TransparentGlassOrb({
         <div
           className="absolute inset-0 rounded-full pointer-events-none"
           style={{
-            border: '1.5px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: `
-              inset 0 0 30px rgba(255, 255, 255, 0.04),
-              0 0 1px rgba(255, 255, 255, 0.2)
-            `,
+            border: '1.25px solid rgba(255, 255, 255, 0.24)',
+boxShadow: `
+  inset 0 0 18px rgba(255,255,255,0.03),
+  0 0 1px rgba(255,255,255,0.22)
+`,
+
           }}
         />
 
