@@ -1,19 +1,33 @@
-// LandingPage.tsx — Optimized with lazy loading
+// LandingPage.tsx — With MacBook Section
 'use client';
 
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-// Lazy load the heavy hero component
+// Lazy load components
 const LiquidGlassHero = lazy(() => 
   import('@/components/landing/LiquidGlassHero').then(mod => ({ default: mod.LiquidGlassHero }))
 );
 
-// Simple loading fallback
+const MacBookSection = lazy(() => 
+  import('@/components/landing/MacBookSection').then(mod => ({ default: mod.MacBookSection }))
+);
+
+// Loading fallbacks
 const HeroSkeleton = () => (
   <div className="h-[180vh] bg-[#050508] flex items-center justify-center">
     <div className="animate-pulse">
       <div className="w-64 h-16 bg-white/5 rounded-full" />
+    </div>
+  </div>
+);
+
+const MacBookSkeleton = () => (
+  <div className="min-h-[300vh] bg-[#050508]">
+    <div className="sticky top-0 h-screen flex items-center justify-center">
+      <div className="animate-pulse">
+        <div className="w-125 h-80 bg-white/5 rounded-xl" />
+      </div>
     </div>
   </div>
 );
@@ -24,12 +38,16 @@ interface LandingPageProps {
 
 export function LandingPage({ visible }: LandingPageProps) {
   const [shouldRender, setShouldRender] = useState(false);
+  const [shouldRenderMac, setShouldRenderMac] = useState(false);
 
-  // Delay hero rendering slightly to allow critical path first
   useEffect(() => {
     if (visible) {
       const timer = setTimeout(() => setShouldRender(true), 100);
-      return () => clearTimeout(timer);
+      const macTimer = setTimeout(() => setShouldRenderMac(true), 300);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(macTimer);
+      };
     }
     return undefined;
   }, [visible]);
@@ -43,22 +61,20 @@ export function LandingPage({ visible }: LandingPageProps) {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="bg-[#050508]"
     >
-      {/* Liquid Glass Metaball Hero - lazy loaded */}
+      {/* Liquid Glass Metaball Hero */}
       <Suspense fallback={<HeroSkeleton />}>
         {shouldRender && <LiquidGlassHero />}
       </Suspense>
       
-      {/* Next section */}
-      <section className="min-h-screen bg-[#050508] flex items-center justify-center">
-        <div className="text-center px-6">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-            Elite AI Talent
-          </h2>
-          <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto">
-            World-class engineers from the companies that shaped the future, now working for you.
-          </p>
-        </div>
-      </section>
+      {/* MacBook Section - replaces Elite AI Talent */}
+      <Suspense fallback={<MacBookSkeleton />}>
+        {shouldRenderMac && (
+          <MacBookSection
+            videoSrc="/demo-video.mp4"
+            scale={1.5}
+          />
+        )}
+      </Suspense>
     </motion.div>
   );
 }
