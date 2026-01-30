@@ -1,37 +1,50 @@
-// LandingPage.tsx — With MacBook Section
+// LandingPage.tsx — With MacBook Section + Alcove-Style Hero Text
 'use client';
 
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-// Lazy load components
+// ═══════════════════════════════════════════════════════════════════════════
+// LANDING PAGE
+// Main page composition with lazy-loaded sections
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Lazy load components - use default imports for default exports
 const LiquidGlassHero = lazy(() => 
   import('@/components/landing/LiquidGlassHero').then(mod => ({ default: mod.LiquidGlassHero }))
 );
 
-const MacBookSection = lazy(() => 
-  import('@/components/landing/MacBookSection').then(mod => ({ default: mod.MacBookSection }))
-);
+// Fixed: MacBookSection uses default export, so no need for .then() transformation
+const MacBookSection = lazy(() => import('@/components/landing/MacBookSection'));
 
-// Loading fallbacks
-const HeroSkeleton = () => (
-  <div className="h-[180vh] bg-[#050508] flex items-center justify-center">
-    <div className="animate-pulse">
-      <div className="w-64 h-16 bg-white/5 rounded-full" />
-    </div>
-  </div>
-);
-
-const MacBookSkeleton = () => (
-  <div className="min-h-[300vh] bg-[#050508]">
-    <div className="sticky top-0 h-screen flex items-center justify-center">
+// ─────────────────────────────────────────────────────────────────────────────
+// Loading Skeletons
+// ─────────────────────────────────────────────────────────────────────────────
+function HeroSkeleton() {
+  return (
+    <div className="h-[180vh] bg-[#050508] flex items-center justify-center">
       <div className="animate-pulse">
-        <div className="w-125 h-80 bg-white/5 rounded-xl" />
+        <div className="w-64 h-16 bg-white/5 rounded-full" />
       </div>
     </div>
-  </div>
-);
+  );
+}
 
+function MacBookSkeleton() {
+  return (
+    <div className="min-h-[200vh] bg-[#050508]">
+      <div className="sticky top-0 h-screen flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-125 h-80 bg-white/5 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
 interface LandingPageProps {
   visible: boolean;
 }
@@ -42,8 +55,10 @@ export function LandingPage({ visible }: LandingPageProps) {
 
   useEffect(() => {
     if (visible) {
+      // Stagger component loading for smoother initial render
       const timer = setTimeout(() => setShouldRender(true), 100);
       const macTimer = setTimeout(() => setShouldRenderMac(true), 300);
+      
       return () => {
         clearTimeout(timer);
         clearTimeout(macTimer);
@@ -61,17 +76,25 @@ export function LandingPage({ visible }: LandingPageProps) {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="bg-[#050508]"
     >
-      {/* Liquid Glass Metaball Hero */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          SECTION 1: Liquid Glass Metaball Hero
+          ═══════════════════════════════════════════════════════════════════════ */}
       <Suspense fallback={<HeroSkeleton />}>
         {shouldRender && <LiquidGlassHero />}
       </Suspense>
       
-      {/* MacBook Section - replaces Elite AI Talent */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          SECTION 2: MacBook with Alcove-Style Text
+          Scroll locks DOWN only during animation, UP always free
+          ═══════════════════════════════════════════════════════════════════════ */}
       <Suspense fallback={<MacBookSkeleton />}>
         {shouldRenderMac && (
           <MacBookSection
             videoSrc="/demo-video.mp4"
             scale={1.5}
+            glowColor="#6366f1"
+            heroLine1="Talent Beyond Comparison."
+            showDebug={process.env.NODE_ENV === 'development'}
           />
         )}
       </Suspense>
