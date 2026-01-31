@@ -1,4 +1,4 @@
-// LandingPage.tsx — With MacBook Section + Alcove-Style Hero Text
+// LandingPage.tsx — With MacBook (Desktop) / iPhone (Mobile) conditional rendering
 'use client';
 
 import { Suspense, lazy, useEffect, useState } from 'react';
@@ -6,16 +6,56 @@ import { motion } from 'framer-motion';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LANDING PAGE
-// Main page composition with lazy-loaded sections
+// Conditionally renders MacBook section on desktop, iPhone section on mobile
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Lazy load components - use default imports for default exports
-const LiquidGlassHero = lazy(() => 
-  import('@/components/landing/LiquidGlassHero').then(mod => ({ default: mod.LiquidGlassHero }))
+// Lazy load components
+const LiquidGlassHero = lazy(() =>
+  import('@/components/landing/LiquidGlassHero').then((mod) => ({
+    default: mod.LiquidGlassHero,
+  }))
 );
 
-// Fixed: MacBookSection uses default export, so no need for .then() transformation
 const MacBookSection = lazy(() => import('@/components/landing/MacBookSection'));
+const MobileDeviceSection = lazy(() => import('@/components/landing/MobileDeviceSection'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Device Detection Hook
+// ─────────────────────────────────────────────────────────────────────────────
+function useIsMobile(): boolean | null {
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      // Check user agent for mobile devices
+      const ua = navigator.userAgent;
+      const mobileUA = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+      // Also check screen width as fallback
+      const mobileWidth = window.innerWidth < 768;
+
+      // Check for touch capability
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+      // Consider mobile if UA matches OR (small screen AND touch capable)
+      setIsMobile(mobileUA || (mobileWidth && hasTouch));
+    };
+
+    checkMobile();
+
+    // Re-check on resize (for responsive testing)
+    const handleResize = () => {
+      // Debounce
+      clearTimeout((handleResize as { timeout?: NodeJS.Timeout }).timeout);
+      (handleResize as { timeout?: NodeJS.Timeout }).timeout = setTimeout(checkMobile, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isMobile;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loading Skeletons
@@ -42,6 +82,17 @@ function MacBookSkeleton() {
   );
 }
 
+function MobileSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#050508] flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <div className="w-24 h-48 bg-white/5 rounded-3xl" />
+        <div className="w-32 h-4 bg-white/5 rounded" />
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,24 +101,28 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ visible }: LandingPageProps) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const [shouldRenderMac, setShouldRenderMac] = useState(false);
+  const isMobile = useIsMobile();
+  const [shouldRenderHero, setShouldRenderHero] = useState(false);
+  const [shouldRenderDevice, setShouldRenderDevice] = useState(false);
 
   useEffect(() => {
     if (visible) {
       // Stagger component loading for smoother initial render
-      const timer = setTimeout(() => setShouldRender(true), 100);
-      const macTimer = setTimeout(() => setShouldRenderMac(true), 300);
-      
+      const heroTimer = setTimeout(() => setShouldRenderHero(true), 100);
+      const deviceTimer = setTimeout(() => setShouldRenderDevice(true), 300);
+
       return () => {
-        clearTimeout(timer);
-        clearTimeout(macTimer);
+        clearTimeout(heroTimer);
+        clearTimeout(deviceTimer);
       };
     }
     return undefined;
   }, [visible]);
 
   if (!visible) return null;
+
+  // Wait for device detection before rendering device-specific content
+  const deviceDetected = isMobile !== null;
 
   return (
     <motion.div
@@ -80,24 +135,59 @@ export function LandingPage({ visible }: LandingPageProps) {
           SECTION 1: Liquid Glass Metaball Hero
           ═══════════════════════════════════════════════════════════════════════ */}
       <Suspense fallback={<HeroSkeleton />}>
-        {shouldRender && <LiquidGlassHero />}
+        {shouldRenderHero && <LiquidGlassHero />}
       </Suspense>
-      
+
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECTION 2: MacBook with Alcove-Style Text
-          Scroll locks DOWN only during animation, UP always free
+          SECTION 2: Device-Specific Demo Section
+          - Desktop: MacBook with scroll-controlled lid animation
+          - Mobile: iPhone with orientation detection & video playback
           ═══════════════════════════════════════════════════════════════════════ */}
-      <Suspense fallback={<MacBookSkeleton />}>
-        {shouldRenderMac && (
-          <MacBookSection
-            videoSrc="/demo-video.mp4"
-            scale={1.5}
-            glowColor="#6366f1"
-            heroLine1="Talent Beyond Comparison."
-            showDebug={process.env.NODE_ENV === 'development'}
-          />
-        )}
-      </Suspense>
+      {deviceDetected && shouldRenderDevice && (
+        <>
+          {isMobile ? (
+            // ─────────────────────────────────────────────────────────────────
+            // MOBILE: iPhone Section
+            // - Prompts landscape rotation
+            // - Auto-plays video in landscape
+            // - Fullscreen fallback option
+            // - No scroll locking
+            // ─────────────────────────────────────────────────────────────────
+            <Suspense fallback={<MobileSkeleton />}>
+              <MobileDeviceSection
+                videoSrc="/demo-video.mp4"
+                glowColor="#6366f1"
+                heroText="Talent Beyond Comparison."
+              />
+            </Suspense>
+          ) : (
+            // ─────────────────────────────────────────────────────────────────
+            // DESKTOP: MacBook Section
+            // - Scroll-controlled lid opening animation
+            // - Video plays when lid open
+            // - Immersive scroll-lock experience
+            // ─────────────────────────────────────────────────────────────────
+            <Suspense fallback={<MacBookSkeleton />}>
+              <MacBookSection
+                videoSrc="/demo-video.mp4"
+                scale={1.5}
+                glowColor="#6366f1"
+                heroLine1="Talent Beyond Comparison."
+                showDebug={process.env.NODE_ENV === 'development'}
+              />
+            </Suspense>
+          )}
+        </>
+      )}
+
+      {/* Device detection loading state */}
+      {!deviceDetected && shouldRenderDevice && (
+        <div className="min-h-screen bg-[#050508] flex items-center justify-center">
+          <div className="animate-pulse">
+            <div className="w-16 h-16 rounded-full bg-white/5" />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

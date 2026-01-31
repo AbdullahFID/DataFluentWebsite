@@ -327,32 +327,61 @@ function MacModel({ videoSrc, imageSrc, scale = 1, lidAngle, shouldPlay, onVideo
   }, [gltf.scene]);
 
   // Video texture setup
-  useEffect(() => {
-    if (!videoSrc || !matteRef.current) return;
+useEffect(() => {
+  if (!videoSrc || !matteRef.current) return;
 
-    const video = preloadedVideo ?? preloadVideo(videoSrc);
-    videoRef.current = video;
-    onVideoRef?.(video);
+  const video = preloadedVideo ?? preloadVideo(videoSrc);
+  videoRef.current = video;
+  onVideoRef?.(video);
 
-    const texture = new THREE.VideoTexture(video);
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.colorSpace = THREE.SRGBColorSpace;
-    videoTextureRef.current = texture;
+  const texture = new THREE.VideoTexture(video);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  videoTextureRef.current = texture;
 
-    const mat = matteRef.current.material as THREE.MeshStandardMaterial;
-    mat.map = texture;
-    mat.metalness = 0;
-    mat.roughness = 1;
-    mat.emissive = new THREE.Color(0x000000);
-    mat.emissiveIntensity = 0;
-    mat.envMapIntensity = 0;
-    mat.needsUpdate = true;
+  const mat = matteRef.current.material as THREE.MeshStandardMaterial;
+  mat.map = texture;
+  mat.metalness = 0;
+  mat.roughness = 1;
+  mat.emissive = new THREE.Color(0x000000);
+  mat.emissiveIntensity = 0;
+  mat.envMapIntensity = 0;
+  mat.needsUpdate = true;
 
-    return () => {
-      texture.dispose();
-    };
-  }, [videoSrc, gltf.scene, onVideoRef]);
+  // ─────────────────────────────────────────────────────────────────────────
+  // Aspect-ratio-preserving letterbox setup
+  // ─────────────────────────────────────────────────────────────────────────
+  const SCREEN_ASPECT = 16 / 10; // MacBook screen ~16:10
+
+  const applyLetterbox = () => {
+    const videoAspect = video.videoWidth / video.videoHeight;
+
+    if (videoAspect > SCREEN_ASPECT) {
+      // Video is wider → black bars top/bottom (letterbox)
+      const scale = SCREEN_ASPECT / videoAspect;
+      texture.repeat.set(1, scale);
+      texture.offset.set(0, (1 - scale) / 2);
+    } else {
+      // Video is taller → black bars left/right (pillarbox)
+      const scale = videoAspect / SCREEN_ASPECT;
+      texture.repeat.set(scale, 1);
+      texture.offset.set((1 - scale) / 2, 0);
+    }
+  };
+
+  // Apply once metadata is ready
+  if (video.readyState >= 1) {
+    applyLetterbox();
+  } else {
+    video.addEventListener('loadedmetadata', applyLetterbox, { once: true });
+  }
+
+  return () => {
+    video.removeEventListener('loadedmetadata', applyLetterbox);
+    texture.dispose();
+  };
+}, [videoSrc, gltf.scene, onVideoRef]);
 
   // Image texture fallback
   useEffect(() => {
