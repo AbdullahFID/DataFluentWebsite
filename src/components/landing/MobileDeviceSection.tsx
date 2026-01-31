@@ -33,17 +33,28 @@ function useOrientation(): OrientationState {
 
   useEffect(() => {
     const updateOrientation = () => {
-      // Primary: matchMedia (most reliable cross-browser)
-      const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+      // Multiple detection methods for reliability
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       
-      // Secondary: screen.orientation API for angle
+      // Primary: compare dimensions (most reliable)
+      const isLandscapeBySize = width > height;
+      
+      // Secondary: matchMedia
+      const isLandscapeByMedia = window.matchMedia('(orientation: landscape)').matches;
+      
+      // Use size comparison as primary (more reliable on mobile)
+      const isLandscape = isLandscapeBySize;
+      
+      // Get angle if available
       let angle = 0;
       if (screen.orientation) {
         angle = screen.orientation.angle;
       } else if (typeof window.orientation === 'number') {
-        // Legacy fallback
         angle = window.orientation;
       }
+
+      console.log('[Orientation]', { width, height, isLandscapeBySize, isLandscapeByMedia, angle });
 
       setState({
         orientation: isLandscape ? 'landscape' : 'portrait',
@@ -54,12 +65,11 @@ function useOrientation(): OrientationState {
     // Initial check
     updateOrientation();
 
-    // matchMedia listener (preferred)
-    const mediaQuery = window.matchMedia('(orientation: portrait)');
+    // Multiple listeners for reliability
+    const mediaQuery = window.matchMedia('(orientation: landscape)');
     const handleMediaChange = () => updateOrientation();
     mediaQuery.addEventListener('change', handleMediaChange);
 
-    // Fallback listeners
     window.addEventListener('resize', updateOrientation);
     window.addEventListener('orientationchange', updateOrientation);
 
@@ -110,56 +120,76 @@ function RotatePrompt({ onSkip }: RotatePromptProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#050508]/95 backdrop-blur-sm"
+      className="absolute inset-0 z-30 flex flex-col items-center justify-end pb-32 pointer-events-none"
     >
-      {/* Animated phone icon */}
-      <motion.div
-        className="relative mb-8"
-        animate={{ rotate: [0, 90, 90, 0] }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          repeatDelay: 0.5,
-          times: [0, 0.4, 0.6, 1],
-          ease: 'easeInOut',
+      {/* Semi-transparent gradient overlay - iPhone visible through top */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(
+            to top,
+            rgba(5, 5, 8, 0.95) 0%,
+            rgba(5, 5, 8, 0.8) 30%,
+            rgba(5, 5, 8, 0.4) 60%,
+            rgba(5, 5, 8, 0.1) 80%,
+            transparent 100%
+          )`,
         }}
-      >
-        {/* Phone outline */}
-        <div className="w-16 h-28 rounded-2xl border-2 border-white/30 relative">
-          {/* Screen */}
-          <div className="absolute inset-2 rounded-xl bg-white/5" />
-          {/* Notch */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-6 h-1.5 rounded-full bg-white/20" />
-          {/* Home indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-white/20" />
-        </div>
-        
-        {/* Rotation arrow */}
+      />
+      
+      {/* Content container */}
+      <div className="relative z-10 flex flex-col items-center pointer-events-auto">
+        {/* Animated phone icon */}
         <motion.div
-          className="absolute -right-8 top-1/2 -translate-y-1/2"
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          className="relative mb-6"
+          animate={{ rotate: [0, 90, 90, 0] }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            repeatDelay: 0.5,
+            times: [0, 0.4, 0.6, 1],
+            ease: 'easeInOut',
+          }}
         >
-          <RotateCcw className="w-6 h-6 text-white/50" />
+          {/* Phone outline */}
+          <div className="w-12 h-20 rounded-xl border-2 border-white/40 relative bg-white/5 backdrop-blur-sm">
+            {/* Screen */}
+            <div className="absolute inset-1.5 rounded-lg bg-white/10" />
+            {/* Notch */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-1 rounded-full bg-white/30" />
+            {/* Home indicator */}
+            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-white/30" />
+          </div>
+          
+          {/* Rotation arrow */}
+          <motion.div
+            className="absolute -right-6 top-1/2 -translate-y-1/2"
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <RotateCcw className="w-5 h-5 text-white/60" />
+          </motion.div>
         </motion.div>
-      </motion.div>
 
-      <h3 className="text-xl font-semibold text-white/90 mb-2">
-        Rotate Your Phone
-      </h3>
-      <p className="text-sm text-white/50 text-center px-8 mb-6 max-w-xs">
-        For the best experience, please rotate your device to landscape mode
-      </p>
+        <h3 className="text-lg font-semibold text-white/90 mb-1">
+          Rotate for Best View
+        </h3>
+        <p className="text-sm text-white/50 text-center px-8 mb-4 max-w-xs">
+          Turn your phone sideways to watch the demo
+        </p>
 
-      {/* Skip button */}
-      {onSkip && (
-        <button
-          onClick={onSkip}
-          className="px-4 py-2 text-sm text-white/40 hover:text-white/70 transition-colors"
-        >
-          Skip for now
-        </button>
-      )}
+        {/* Skip button */}
+        {onSkip && (
+          <button
+            onClick={onSkip}
+            className="px-4 py-2 text-sm text-white/50 hover:text-white/80 
+                       bg-white/5 hover:bg-white/10 rounded-full 
+                       border border-white/10 transition-all"
+          >
+            Watch in portrait
+          </button>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -188,6 +218,7 @@ function VideoControls({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
       transition={{ delay: 0.3 }}
       className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3"
     >
@@ -253,60 +284,93 @@ function IPhoneModel({ videoSrc, isLandscape, onVideoRef }: IPhoneModelProps) {
   const videoTextureRef = useRef<THREE.VideoTexture | null>(null);
   const { viewport } = useThree();
 
-  // Find screen mesh and apply video texture
+  // Find screen mesh and set up materials
   useEffect(() => {
     if (!gltf.scene) return;
 
-    // Traverse to find the screen mesh
-    // Common names: "Screen", "Display", "screen", "display", "Matte"
+    console.log('[iPhone] Loading model, traversing meshes...');
+
+    // Make all materials visible and well-lit
     gltf.scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        const name = mesh.name.toLowerCase();
+        const meshName = mesh.name.toLowerCase();
+        
+        console.log('[iPhone] Found mesh:', mesh.name);
+
+        // Ensure materials are visible
+        if (mesh.material) {
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          // Make materials brighter and more visible
+          if (mat.color) {
+            mat.color.multiplyScalar(1.5);
+          }
+          mat.metalness = Math.min(mat.metalness, 0.5);
+          mat.roughness = Math.max(mat.roughness, 0.3);
+          mat.needsUpdate = true;
+        }
         
         // Look for screen-related mesh names
         if (
-          name.includes('screen') ||
-          name.includes('display') ||
-          name.includes('matte') ||
-          name.includes('glass') ||
-          name.includes('lcd')
+          meshName.includes('screen') ||
+          meshName.includes('display') ||
+          meshName.includes('matte') ||
+          meshName.includes('glass') ||
+          meshName.includes('lcd') ||
+          meshName.includes('panel')
         ) {
+          console.log('[iPhone] Found screen mesh:', mesh.name);
           screenRef.current = mesh;
         }
       }
     });
 
-    // If no screen found, try to find the largest flat surface
+    // If no screen found by name, use the first large flat mesh
     if (!screenRef.current) {
-      let largestMesh: THREE.Mesh | null = null;
-      let largestArea = 0;
+      console.log('[iPhone] No screen found by name, searching by geometry...');
+      let bestCandidate: THREE.Mesh | null = null;
+      let bestScore = 0;
 
       gltf.scene.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
           const geometry = mesh.geometry;
-          geometry.computeBoundingBox();
+          
+          if (geometry.boundingBox === null) {
+            geometry.computeBoundingBox();
+          }
+          
           const box = geometry.boundingBox;
           if (box) {
-            const area = (box.max.x - box.min.x) * (box.max.y - box.min.y);
-            if (area > largestArea) {
-              largestArea = area;
-              largestMesh = mesh;
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            // Look for flat rectangles (screen-like)
+            const flatness = Math.min(size.x, size.y, size.z);
+            const area = size.x * size.y * size.z / (flatness || 0.001);
+            
+            if (area > bestScore && flatness < 0.1) {
+              bestScore = area;
+              bestCandidate = mesh;
             }
           }
         }
       });
 
-      if (largestMesh) {
-        screenRef.current = largestMesh;
+      if (bestCandidate) {
+        console.log('[iPhone] Using candidate mesh:', (bestCandidate as THREE.Mesh).name);
+        screenRef.current = bestCandidate;
       }
     }
   }, [gltf.scene]);
 
   // Setup video texture
   useEffect(() => {
-    if (!videoSrc || !screenRef.current) return;
+    if (!videoSrc || !screenRef.current) {
+      console.log('[iPhone] Cannot setup video:', { videoSrc: !!videoSrc, screen: !!screenRef.current });
+      return;
+    }
+
+    console.log('[iPhone] Setting up video texture');
 
     const video = preloadedMobileVideo ?? preloadMobileVideo(videoSrc);
     videoRef.current = video;
@@ -316,7 +380,6 @@ function IPhoneModel({ videoSrc, isLandscape, onVideoRef }: IPhoneModelProps) {
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.flipY = false;
     videoTextureRef.current = texture;
 
     // Apply to screen material
@@ -324,8 +387,9 @@ function IPhoneModel({ videoSrc, isLandscape, onVideoRef }: IPhoneModelProps) {
     if (mesh.material) {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       mat.map = texture;
-      mat.emissive = new THREE.Color(0x111111);
-      mat.emissiveIntensity = 0.5;
+      mat.emissive = new THREE.Color(0x222222);
+      mat.emissiveIntensity = 1;
+      mat.emissiveMap = texture;
       mat.metalness = 0;
       mat.roughness = 0.1;
       mat.needsUpdate = true;
@@ -349,11 +413,13 @@ function IPhoneModel({ videoSrc, isLandscape, onVideoRef }: IPhoneModelProps) {
     }
   });
 
-  // Calculate scale based on viewport
-  const scale = Math.min(viewport.width, viewport.height) * 0.12;
+  // Make the iPhone BIG and visible - scale based on viewport height for portrait
+  const portraitScale = viewport.height * 0.35;
+  const landscapeScale = viewport.width * 0.25;
+  const scale = isLandscape ? landscapeScale : portraitScale;
 
   return (
-    <group ref={groupRef} position={[0, 0, 0]} scale={scale}>
+    <group ref={groupRef} position={[0, 0, 0]} scale={Math.max(scale, 2)}>
       <primitive object={gltf.scene} />
     </group>
   );
@@ -435,7 +501,6 @@ interface MobileDeviceSectionProps {
   videoSrc?: string;
   className?: string;
   glowColor?: string;
-  heroText?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -445,7 +510,6 @@ export function MobileDeviceSection({
   videoSrc = '/demo-video.mp4',
   className = '',
   glowColor = '#6366f1',
-  heroText = 'Experience the Future',
 }: MobileDeviceSectionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -459,6 +523,9 @@ export function MobileDeviceSection({
   const [autoplayFailed, setAutoplayFailed] = useState(false);
   const [skippedRotation, setSkippedRotation] = useState(false);
   const [isInView, setIsInView] = useState(false);
+
+  // Check if we're on client (safe for SSR)
+  const isClient = typeof window !== 'undefined';
 
   // Preload video
   useEffect(() => {
@@ -501,12 +568,13 @@ export function MobileDeviceSection({
     };
   }, []);
 
-  // Auto-play when landscape and in view
+  // Auto-play when landscape OR when user chose to watch in portrait
   useEffect(() => {
     const video = videoElementRef.current;
     if (!video) return;
 
-    const shouldAutoplay = isLandscape && isInView && (skippedRotation || isLandscape);
+    // Play video if: in landscape, OR user skipped rotation prompt, AND section is in view
+    const shouldAutoplay = isInView && (isLandscape || skippedRotation);
 
     if (shouldAutoplay) {
       video.muted = true; // Must be muted for autoplay
@@ -616,126 +684,105 @@ export function MobileDeviceSection({
     }
   }, []);
 
-  // Skip rotation prompt
+  // Skip rotation prompt - start video playback
   const handleSkipRotation = useCallback(() => {
     setSkippedRotation(true);
+    
+    // Try to play video immediately when user engages
+    const video = videoElementRef.current;
+    if (video) {
+      video.muted = true;
+      video.play()
+        .then(() => setAutoplayFailed(false))
+        .catch(() => setAutoplayFailed(true));
+    }
   }, []);
 
-  const showRotatePrompt = !isLandscape && !skippedRotation;
-  const showContent = isLandscape || skippedRotation;
+  const showRotatePrompt = isClient && !isLandscape && !skippedRotation;
+  const showControls = isClient && (isLandscape || skippedRotation);
 
   return (
     <section
       ref={sectionRef}
       className={`relative min-h-screen bg-[#050508] overflow-hidden ${className}`}
     >
-      {/* Ambient glow background */}
-      <AmbientGlow intensity={showContent ? 0.8 : 0.3} color={glowColor} />
+      {/* Ambient glow background - always visible */}
+      <AmbientGlow intensity={isLandscape ? 0.8 : 0.5} color={glowColor} />
 
-      {/* Hero text - fades when content shown */}
-      <AnimatePresence>
-        {!showContent && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-16 left-0 right-0 z-10 text-center px-6"
-          >
-            <h2
-              className="text-4xl font-black tracking-tight"
-              style={{
-                background: 'linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              {heroText}
-            </h2>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 3D Canvas with iPhone - ALWAYS VISIBLE */}
+      <div className="absolute inset-0 z-10">
+        <Canvas
+          camera={{ fov: 45, position: [0, 0, 4], near: 0.1, far: 100 }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            powerPreference: 'high-performance',
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.5,
+          }}
+          dpr={[1, 2]}
+          onCreated={({ gl }) => {
+            gl.setClearColor(0x000000, 0);
+            gl.outputColorSpace = THREE.SRGBColorSpace;
+          }}
+        >
+          {/* Strong ambient for base visibility */}
+          <ambientLight intensity={1.5} />
+          
+          {/* Key light - main illumination */}
+          <directionalLight 
+            position={[5, 5, 5]} 
+            intensity={2} 
+            castShadow 
+          />
+          
+          {/* Fill light - soften shadows */}
+          <directionalLight 
+            position={[-5, 3, 3]} 
+            intensity={1} 
+          />
+          
+          {/* Rim light - edge definition */}
+          <directionalLight 
+            position={[0, -3, -5]} 
+            intensity={0.5} 
+          />
+          
+          {/* Top light */}
+          <pointLight position={[0, 5, 0]} intensity={1} />
 
-      {/* Rotate prompt overlay */}
+          <Suspense fallback={<LoadingIndicator />}>
+            <Environment preset="studio" />
+            <IPhoneModel
+              videoSrc={videoSrc}
+              isLandscape={isLandscape}
+              onVideoRef={handleVideoRef}
+            />
+          </Suspense>
+        </Canvas>
+      </div>
+
+      {/* Rotate prompt overlay - shows on top of iPhone */}
       <AnimatePresence>
         {showRotatePrompt && (
           <RotatePrompt onSkip={handleSkipRotation} />
         )}
       </AnimatePresence>
 
-      {/* 3D Canvas with iPhone */}
+      {/* Video controls - only show when rotated or skipped */}
       <AnimatePresence>
-        {showContent && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20"
-          >
-            <Canvas
-              camera={{ fov: 35, position: [0, 0, 5] }}
-              gl={{
-                antialias: true,
-                alpha: true,
-                powerPreference: 'high-performance',
-                toneMapping: THREE.ACESFilmicToneMapping,
-              }}
-              dpr={[1, 2]}
-              onCreated={({ gl }) => {
-                gl.setClearColor(0x000000, 0);
-                gl.outputColorSpace = THREE.SRGBColorSpace;
-              }}
-            >
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 5, 5]} intensity={1.2} />
-              <directionalLight position={[-3, 3, -3]} intensity={0.4} />
-              <spotLight
-                position={[0, 5, 2]}
-                angle={0.5}
-                penumbra={0.5}
-                intensity={0.8}
-                castShadow
-              />
-
-              <Suspense fallback={<LoadingIndicator />}>
-                <Environment preset="city" />
-                <IPhoneModel
-                  videoSrc={videoSrc}
-                  isLandscape={isLandscape}
-                  onVideoRef={handleVideoRef}
-                />
-              </Suspense>
-            </Canvas>
-
-            {/* Video controls */}
-            <VideoControls
-              isPlaying={isPlaying}
-              isMuted={isMuted}
-              onPlay={handlePlay}
-              onFullscreen={handleFullscreen}
-              onToggleMute={handleToggleMute}
-              autoplayFailed={autoplayFailed}
-            />
-          </motion.div>
+        {showControls && (
+          <VideoControls
+            isPlaying={isPlaying}
+            isMuted={isMuted}
+            onPlay={handlePlay}
+            onFullscreen={handleFullscreen}
+            onToggleMute={handleToggleMute}
+            autoplayFailed={autoplayFailed}
+          />
         )}
       </AnimatePresence>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showContent ? 0.5 : 0 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
-      >
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-xs text-white/40">Scroll to continue</span>
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center p-1.5"
-          >
-            <div className="w-1 h-1.5 rounded-full bg-white/50" />
-          </motion.div>
-        </div>
-      </motion.div>
     </section>
   );
 }

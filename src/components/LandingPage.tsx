@@ -75,7 +75,7 @@ function MacBookSkeleton() {
     <div className="min-h-[200vh] bg-[#050508]">
       <div className="sticky top-0 h-screen flex items-center justify-center">
         <div className="animate-pulse">
-          <div className="w-125 h-80 bg-white/5 rounded-xl" />
+          <div className="w-[500px] h-80 bg-white/5 rounded-xl" />
         </div>
       </div>
     </div>
@@ -157,7 +157,6 @@ export function LandingPage({ visible }: LandingPageProps) {
               <MobileDeviceSection
                 videoSrc="/demo-video.mp4"
                 glowColor="#6366f1"
-                heroText="Talent Beyond Comparison."
               />
             </Suspense>
           ) : (
